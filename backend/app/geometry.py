@@ -92,9 +92,16 @@ def _assemble(paths, labels, warnings, kind, units):
         for child in children:
             if any(is_inside(child, other) for other in children):
                 continue
+            # Fechamento interno = candidato, não confirmação de vazador.
+            circularity = 4 * math.pi * child.area / (child.length * child.length) if child.length else 0
+            circular = circularity >= 0.90
+            center = child.centroid
             features.append({
                 "id": f"V{len(features)+1:02d}",
                 "points": _outline(child),
+                "center": [round(center.x, 4), round(center.y, 4)],
+                "shape": "circular" if circular else "recorte",
+                "suggestion": "Possível vazador circular" if circular else "Recorte/marca interna: revisar",
                 "classification": "pendente",
             })
         possible_labels = [text for text, x, y in labels if ring.buffer(.2).covers(Point(x, y))]
