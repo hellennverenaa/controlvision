@@ -5,7 +5,9 @@ type Feature = { id: string; points: number[][]; center: number[]; shape: 'circu
 type Piece = { id: string; name: string; size: string|null; points: number[][]; features: Feature[]; bbox: number[]; area_mm2: number }
 type Catalog = { filename: string; format: string; units: string; count: number; pieces: Piece[]; warnings: string[] }
 type PhotoCandidate = { id: string; center: number[]; radius_px: number; circularity: number; kind: string }
-type Preview = { status: string; contour: number[][]; image_size: number[]; detected_regions: number; mode: 'marks'|'holes'; candidates: PhotoCandidate[]; candidate_count: number; warnings: string[] }
+type MatchedPoint = { cad_id: string; image_id: string; expected_px: number[]; detected_px: number[] }
+type MatchPreview = { status: 'preview_only'; fit_quality: string; shape_error_relative: number; projected_contour: number[][]; matched: MatchedPoint[]; unmatched_cad: {cad_id:string;position_px:number[]}[]; unmatched_image: {image_id:string;position_px:number[]}[]; warnings: string[] }
+type Preview = { status: string; contour: number[][]; image_size: number[]; detected_regions: number; mode: 'marks'|'holes'; candidates: PhotoCandidate[]; candidate_count: number; warnings: string[]; matching?: MatchPreview|null }
 
 const catalog = ref<Catalog|null>(null)
 const selectedId = ref<string|null>(null)
@@ -20,6 +22,7 @@ const highlightedFeatureId = ref<string|null>(null)
 const step = ref<1|2|3>(1)
 const photoMode = ref<'marks'|'holes'>('marks')
 const lastPhoto = ref<File|null>(null)
+const showMatching = ref(true)
 function selectStep(value: 1|2|3): void {
   if (value===2 && !catalog.value) return
   if (value===3 && !selected.value) return
@@ -77,6 +80,11 @@ async function processPhoto(file: File): Promise<void> {
   photoUrl.value=URL.createObjectURL(file)
   try {
     const form=new FormData();form.append('file',file);form.append('mode',photoMode.value)
+    if (selected.value) form.append('cad_data', JSON.stringify({
+      contour: selected.value.points,
+      features: selected.value.features.filter(feature=>feature.classification==='vazador')
+        .map(feature=>({id:feature.id,center:feature.center,classification:feature.classification}))
+    }))
     const response=await fetch('/api/vision/preview',{method:'POST',body:form})
     const result=await response.json()
     if (!response.ok) throw Error(result.detail ?? 'Falha ao analisar imagem.')
@@ -220,10 +228,27 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
         <video v-if="cameraOn" ref="video" autoplay muted playsinline class="video"></video>
         <div class="photo-grid">
           <div class="photo" v-if="photoUrl"><img :src="photoUrl" alt="Fotografia enviada">
-            <svg v-if="preview" :viewBox="'0 0 '+preview.image_size[0]+' '+preview.image_size[1]" preserveAspectRatio="none" role="img" aria-label="Contorno vermelho e candidatos circulares em amarelo">
+            <svg v-if="preview" :viewBox="'0 0 '+preview.image_size[0]+' '+preview.image_size[1]" preserveAspectRatio="none"
+              role="img" aria-label="Contorno vermelho da foto, candidatos amarelos e sobreposição CAD azul ilustrativa">
               <polygon :points="pointsToSvg(preview.contour)" class="photo-outline"/>
               <g v-for="point in preview.candidates" :key="point.id">
-                <circle :cx="point.center[0]" :cy="point.center[1]" :r="Math.max(7, point.radius_px+4)" class="photo-point"/>
+                <circle :cx="point.center[0]" :cy="point.center[1]" :r="Math.max(7, point.radius_px+4)" class="photo-point">
+                  <title>{{point.id}} · candidato na fotografia</title>
+                </circle>
+              </g>
+              <g v-if="showMatching && preview.matching" class="match-overlay">
+                <polygon :points="pointsToSvg(preview.matching.projected_contour)" class="cad-illustrative-outline"/>
+                <g v-for="match in preview.matching.matched" :key="match.cad_id">
+                  <line :x1="match.expected_px[0]" :y1="match.expected_px[1]" :x2="match.detected_px[0]" :y2="match.detected_px[1]" class="match-link"/>
+                  <circle :cx="match.expected_px[0]" :cy="match.expected_px[1]" r="6" class="cad-match-point">
+                    <title>{{match.cad_id}} → {{match.image_id}} (associação visual)</title>
+                  </circle>
+                </g>
+                <g v-for="point in preview.matching.unmatched_cad" :key="point.cad_id">
+                  <circle :cx="point.position_px[0]" :cy="point.position_px[1]" r="7" class="cad-unmatched-point">
+                    <title>{{point.cad_id}} · sem candidato associado (não confirma ausência física)</title>
+                  </circle>
+                </g>
               </g>
             </svg>
           </div>
@@ -232,6 +257,23 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
             <strong>Resultado visual — {{preview.mode==='marks'?'marcas escuras':'aberturas claras'}}</strong>
             <span><b>{{preview.candidate_count}}</b> candidatos circulares encontrados na fotografia</span>
             <span><b>{{confirmedFeatures}}</b> vazadores confirmados no desenho CAD</span>
+            <div v-if="preview.matching" class="match-report">
+              <strong>Prévia de correspondência geométrica (sem calibração)</strong>
+              <label class="match-toggle"><input v-model="showMatching" type="checkbox"> Mostrar contorno CAD projetado e pontos associados na foto</label>
+              <span><b>{{preview.matching.matched.length}}</b> associações experimentais</span>
+              <span><b>{{preview.matching.unmatched_cad.length}}</b> pontos CAD sem associação</span>
+              <span><b>{{preview.matching.unmatched_image.length}}</b> candidatos extras na foto</span>
+              <p :class="preview.matching.fit_quality==='baixa'?'candidate-warning':'note'">
+                Qualidade do ajuste visual: {{preview.matching.fit_quality}}.
+                <strong>Os pontos sem associação NÃO são defeitos confirmados.</strong>
+              </p>
+              <p class="note">A escala de visualização foi estimada a partir das silhuetas. Não altera o CAD original, mas também não serve para medir em milímetros.</p>
+              <details><summary>Correspondências encontradas</summary>
+                <p v-if="!preview.matching.matched.length">Nenhuma associação suficientemente próxima.</p>
+                <p v-for="pair in preview.matching.matched" :key="pair.cad_id">{{pair.cad_id}} → {{pair.image_id}}</p>
+              </details>
+            </div>
+            <p v-else class="note">Correspondência indisponível nesta imagem; confira o CAD e a captura.</p>
             <p v-if="preview.candidate_count!==confirmedFeatures" class="candidate-warning">As quantidades são diferentes. Isso não significa automaticamente peça defeituosa: pode ser falha de iluminação ou reconhecimento.</p>
             <p v-else class="candidate-warning">Quantidades iguais não significam posições nem dimensões corretas. Não foi feita correspondência CAD × imagem.</p>
             <p>{{preview.warnings[0]}}</p>
