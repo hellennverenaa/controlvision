@@ -43,6 +43,18 @@ Testes automatizados:
 4. Importar o HPGL equivalente e observar diferenças de agrupamento.
 5. Enviar uma imagem ou usar a webcam apenas para inspecionar a extração visual de contorno.
 
+
+## Fluxo guiado de teste (atualização)
+
+1. **Importar CAD** e escolher uma peça pela lista ou pelo desenho.
+2. **Conferir geometrias internas.** O programa destaca círculos com marcadores maiores, apenas para visualização. Um círculo interno recebe a sugestão de "possível vazador", mas a função precisa ser confirmada por alguém que conheça o molde.
+3. **Testar imagem.** Envie uma fotografia ou use a webcam, de preferência com uma peça realmente recortada, plana e em fundo contrastante. O contorno vermelho é somente o contorno detectado em pixels.
+4. **Comparação dimensional CAD x peça** ainda está indisponível: faltam alinhamento rígido, calibração, medição dos vazadores e testes metrológicos.
+
+Uma fotografia de **um contorno desenhado com caneta sobre uma folha de papel** não permite testar a identificação dos vazadores físicos, já que eles não estão recortados. Os contornos brutos encontrados pela segmentação incluem ruídos e não indicam quantidade de defeitos.
+
+Os dados de classificação da etapa 2 não são gravados, e a confirmação visual não autoriza uso industrial.
+
 ## Limites conhecidos
 
 - Nenhuma aprovação/reprovação automática de produção.
