@@ -44,3 +44,15 @@
 .metrics .candidate-warning{background:#fff8e7;padding:12px;border-radius:8px;color:#8f5b0a}
 .photo svg .photo-outline{fill:none;stroke:#f25248;stroke-width:3;vector-effect:non-scaling-stroke}
 .photo svg .photo-point{fill:#efab1050;stroke:#f6b500;stroke-width:2.8;vector-effect:non-scaling-stroke}
+
+
+/* Registro experimental: nunca sugerir tolerância em pixels como decisão. */
+.photo svg .cad-illustrative-outline{fill:none;stroke:#177ff3;stroke-width:2;stroke-dasharray:7 5;vector-effect:non-scaling-stroke}
+.photo svg .match-link{stroke:#00ba94;stroke-width:2.3;vector-effect:non-scaling-stroke}
+.photo svg .cad-match-point{fill:#66ffc577;stroke:#008e67;stroke-width:2;vector-effect:non-scaling-stroke}
+.photo svg .cad-unmatched-point{fill:#ff8a8a77;stroke:#b63a3a;stroke-width:2;stroke-dasharray:3 2;vector-effect:non-scaling-stroke}
+.match-report{padding:13px;border:1px solid #d5e5f5;background:#f6faff;border-radius:9px;display:flex;flex-direction:column;gap:6px}
+.match-report strong{font-size:12px;color:#235a99}
+.match-report .note{color:#7d8598;line-height:1.4}
+.match-toggle{display:flex;align-items:flex-start;gap:7px;font-size:12px;color:#3a6295;cursor:pointer}
+.match-toggle input{accent-color:#1766da;margin-top:3px}
