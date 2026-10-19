@@ -55,6 +55,18 @@ Uma fotografia de **um contorno desenhado com caneta sobre uma folha de papel** 
 
 Os dados de classificação da etapa 2 não são gravados, e a confirmação visual não autoriza uso industrial.
 
+## Etapas navegáveis e análise interna de imagem
+
+A interface agora separa as etapas em telas reais: **1 — Importar CAD**, **2 — Conferir candidatos internos**, **3 — Analisar fotografia**. As três primeiras etapas são clicáveis na navegação superior quando o CAD correspondente foi selecionado. Depois de confirmar os círculos no CAD, pressione **Continuar para Etapa 3**.
+
+Na Etapa 3 selecione o tipo de imagem:
+- **Desenho no papel:** procura pontos escuros aproximadamente circulares, mas não afirma que sejam vazadores físicos.
+- **Peça recortada com contraste:** procura pequenas aberturas claras no interior de uma região escura, preferencialmente com iluminação traseira.
+
+Os candidatos aparecem com contornos amarelos sobre a fotografia. O número de candidatos da foto e os vazadores confirmados no CAD são mostrados separadamente. **Igualdade de contagens não comprova posição, dimensão ou conformidade**. Ainda não há alinhamento CAD-fotografia nem medição em mm.
+
+Testes automatizados usam fotografias sintéticas: seis marcas sobre papel, seis aberturas sobre peça escura e ausência de furos. As condições reais podem gerar falsos negativos ou falsos positivos.
+
 ## Limites conhecidos
 
 - Nenhuma aprovação/reprovação automática de produção.
