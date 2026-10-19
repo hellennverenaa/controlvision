@@ -39,3 +39,21 @@ def test_invalid_extension():
         assert False
     except ValueError:
         pass
+
+
+def test_hole_is_displayed_as_candidate_not_confirmed(tmp_path):
+    doc = ezdxf.new("R2013")
+    doc.header["$INSUNITS"] = 4
+    model = doc.modelspace()
+    model.add_lwpolyline([(0, 0), (120, 0), (120, 90), (0, 90)], close=True)
+    model.add_circle((24, 45), 1.7)
+    file = tmp_path / "peca.dxf"
+    doc.saveas(file)
+    piece = read_cad(file.name, file.read_bytes())["pieces"][0]
+    assert len(piece["features"]) == 1
+    feature = piece["features"][0]
+    assert feature["shape"] == "circular"
+    assert feature["classification"] == "pendente"
+    assert abs(feature["center"][0] - 24) < .1
+    assert abs(feature["center"][1] - 45) < .1
+    assert "vazador" in feature["suggestion"].lower()
