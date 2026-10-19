@@ -1,11 +1,13 @@
 """API experimental: não aprova ou reprova peças para produção."""
 import cv2
+import json
 import numpy as np
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 from .geometry import read_cad
 from .vision import analyze_image
+from .matching import match_visual
 
 app = FastAPI(title="ControlVision", version="0.1.0")
 app.add_middleware(
@@ -34,7 +36,11 @@ async def import_cad(file: UploadFile = File(...)):
 
 
 @app.post("/api/vision/preview")
-async def inspect_preview(file: UploadFile = File(...), mode: str = Form("marks")):
+async def inspect_preview(
+    file: UploadFile = File(...),
+    mode: str = Form("marks"),
+    cad_data: str | None = Form(None),
+):
     if mode not in ("marks", "holes"):
         raise HTTPException(422, "Modo inválido: escolha marks ou holes.")
     raw = await file.read(15_000_001)
@@ -44,6 +50,23 @@ async def inspect_preview(file: UploadFile = File(...), mode: str = Form("marks"
     if img is None:
         raise HTTPException(422, "Imagem inválida.")
     try:
-        return analyze_image(img, mode=mode)
+        result = analyze_image(img, mode=mode)
+        if cad_data is not None:
+            if len(cad_data) > 2_000_000:
+                raise ValueError("Geometria CAD extensa demais.")
+            try:
+                geometry = json.loads(cad_data)
+                result["matching"] = match_visual(
+                    geometry["contour"],
+                    result["contour"],
+                    geometry["features"],
+                    result["candidates"],
+                )
+            except (ValueError, TypeError, KeyError, IndexError) as exc:
+                result["matching"] = None
+                result["warnings"].append(
+                    "Prévia de correspondência indisponível: " + str(exc)[:180]
+                )
+        return result
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
