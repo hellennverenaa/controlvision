@@ -274,8 +274,16 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
               </details>
             </div>
             <p v-else class="note">Correspondência indisponível nesta imagem; confira o CAD e a captura.</p>
-            <p v-if="preview.candidate_count!==confirmedFeatures" class="candidate-warning">As quantidades são diferentes. Isso não significa automaticamente peça defeituosa: pode ser falha de iluminação ou reconhecimento.</p>
-            <p v-else class="candidate-warning">Quantidades iguais não significam posições nem dimensões corretas. Não foi feita correspondência CAD × imagem.</p>
+            <p v-if="preview.matching" class="candidate-warning">
+              A correspondência visual foi calculada, mas nenhuma posição ou dimensão foi validada em milímetros.
+              Mesmo {{preview.matching.matched.length}} associações não comprovam a presença ou a posição correta dos vazadores físicos.
+            </p>
+            <p v-else-if="preview.candidate_count!==confirmedFeatures" class="candidate-warning">
+              Quantidades diferentes podem resultar de pontos reais ausentes, ruído ou falha na detecção; não é uma reprovação.
+            </p>
+            <p v-else class="candidate-warning">
+              As quantidades coincidem, mas ainda não foi possível estabelecer a correspondência geométrica.
+            </p>
             <p>{{preview.warnings[0]}}</p>
             <details><summary>Detalhes técnicos da segmentação</summary>
               <p>{{preview.detected_regions}} contornos brutos na imagem (texturas e ruídos incluídos).</p>
