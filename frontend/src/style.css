@@ -25,3 +25,22 @@
 #etapa-foto{scroll-margin-top:24px}
 @media(max-width:900px){.workflow{grid-template-columns:repeat(2,minmax(0,1fr))}.next-step{flex-direction:column;align-items:flex-start}}
 @media(max-width:500px){.workflow{grid-template-columns:1fr 1fr}.workflow-step{padding:9px}.workflow-step strong{font-size:10px}.workflow-step small{font-size:9px}}
+
+
+/* Etapas reais, selecionáveis; uma única etapa aparece por vez. */
+.workflow button.workflow-step{cursor:pointer;text-align:left;font-family:inherit;color:inherit}
+.workflow button.workflow-step:hover:not(:disabled){border-color:#457ed4;background:#f3f8ff}
+.workflow button.workflow-step:disabled{cursor:not-allowed;opacity:.48}
+.workflow-step[aria-current="step"]{box-shadow:0 0 0 2px #296fe531}
+.start-panel{padding:24px;line-height:1.7;max-width:800px}
+.start-panel h2{margin:0 0 8px}
+.photo-controls{margin:16px 20px 0;padding:16px;border:1px solid #dce8f6;border-radius:10px;display:flex;gap:13px;flex-wrap:wrap;align-items:center;background:#fafcff}
+.photo-controls strong{width:100%;color:#27548b;font-size:13px}
+.photo-controls label{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer}
+.photo-controls input{accent-color:#155cd8}
+.photo-controls p.note{flex-basis:100%;margin:0}
+.image-next-step{display:flex;gap:16px;align-items:center;margin-top:15px;flex-wrap:wrap}
+.metrics{max-width:620px;line-height:1.6}
+.metrics .candidate-warning{background:#fff8e7;padding:12px;border-radius:8px;color:#8f5b0a}
+.photo svg .photo-outline{fill:none;stroke:#f25248;stroke-width:3;vector-effect:non-scaling-stroke}
+.photo svg .photo-point{fill:#efab1050;stroke:#f6b500;stroke-width:2.8;vector-effect:non-scaling-stroke}
