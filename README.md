@@ -67,6 +67,18 @@ Os candidatos aparecem com contornos amarelos sobre a fotografia. O número de c
 
 Testes automatizados usam fotografias sintéticas: seis marcas sobre papel, seis aberturas sobre peça escura e ausência de furos. As condições reais podem gerar falsos negativos ou falsos positivos.
 
+## Prévia de correspondência CAD × imagem (experimental)
+
+Depois de confirmar as geometrias internas no CAD e abrir a Etapa 3, a API tenta sobrepor o contorno CAD à silhueta identificada na imagem e relacionar os centros dos vazadores confirmados com os pontos detectados na foto.
+
+- O contorno **azul tracejado** é uma projeção ilustrativa do CAD sobre a foto; o contorno **vermelho** é a detecção da foto; os círculos **amarelos** são candidatos da imagem; as linhas **verdes** indicam associações sugeridas.
+- Pontos esperados sem candidato e candidatos sem associação são apresentados separadamente. Isso **não indica furo ausente ou defeito**: a segmentação pode confundir rabiscos, sombras ou perspectiva.
+- O algoritmo utiliza rotação e translação e um **fator de escala calculado das áreas das silhuetas exclusivamente para visualização**. Não redimensiona o molde original nem fornece calibração metrológica. **Não usar o alinhamento automático para esconder diferenças dimensionais**.
+- Quando o alinhamento da silhueta tem qualidade baixa, associações automáticas são bloqueadas. O sistema ainda mostra a prévia e recomenda uma imagem melhor.
+- O algoritmo não corrige perspectiva nem espelha automaticamente a peça. A comparação dimensional em milímetros continua indisponível.
+
+Testes sintéticos cobrem diferentes rotações, um candidato extra e um vazador CAD não encontrado na fotografia. Necessitamos de ensaio real com peça correspondente ao DXF antes de declarar a correspondência validada.
+
 ## Limites conhecidos
 
 - Nenhuma aprovação/reprovação automática de produção.
