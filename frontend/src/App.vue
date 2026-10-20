@@ -229,13 +229,20 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
       </div>
       <section v-if="step===3" class="panel camera" id="etapa-foto">
         <div class="panel-title"><div><span class="eyebrow">ETAPA 3 · IMAGEM EXPERIMENTAL</span><h2>Visualizar o contorno detectado na fotografia</h2></div><span class="tag small">PIXELS — SEM COMPARAÇÃO</span></div>
-        <div class="image-guide"><strong>Peça selecionada no CAD: {{selected?.name}}</strong> • {{confirmedFeatures}} vazadores confirmados no CAD.
-          <br>A borda vermelha é só o contorno detectado na foto. Os círculos amarelos serão <strong>candidatos visuais</strong>; ainda não há alinhamento CAD × imagem.</div>
+        <div class="image-guide">
+          <template v-if="selected"><strong>Molde CAD: {{selected.name}}</strong> · {{confirmedFeatures}} vazadores confirmados.</template>
+          <template v-else><strong>Numeração desconhecida</strong> · {{catalog?.pieces.length}} moldes disponíveis, nenhum escolhido para comparação.</template>
+          <br>Contorno vermelho = fotografia. Círculos amarelos = candidatos visuais, não inspeção dimensional.</div>
         <div class="photo-controls">
           <strong>O que está sendo fotografado?</strong>
           <label><input v-model="photoMode" type="radio" value="marks"> Desenho no papel com pontos escuros</label>
-          <label><input v-model="photoMode" type="radio" value="holes"> Peça cortada com furos claros e fundo contrastante</label>
-          <p class="note">{{photoMode==='marks'?'O sistema procurará pontos escuros arredondados. NÃO são vazadores físicos.':'O sistema tentará identificar aberturas claras dentro de uma peça mais escura. Use fundo uniforme e iluminação por baixo, quando possível.'}}</p>
+          <label><input v-model="photoMode" type="radio" value="holes"> Peça física cortada (furos)</label>
+          <div v-if="photoMode==='holes'" class="tone-selector">
+            <strong>Contraste entre peça e fundo:</strong>
+            <label><input v-model="pieceTone" type="radio" value="dark"> Peça escura, fundo claro</label>
+            <label><input v-model="pieceTone" type="radio" value="light"> Peça clara, fundo mais escuro</label>
+          </div>
+          <p class="note">{{photoMode==='marks'?'Pontos desenhados não são furos físicos.':'Selecione o tom da peça em relação ao fundo. Capturas com contraste insuficiente devem ser consideradas inconclusivas.'}}</p>
         </div>
         <div class="actions">
           <label class="button secondary">Enviar fotografia<input type="file" accept="image/*" hidden @change="uploadPhoto"></label>
@@ -245,7 +252,7 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
         <video v-if="cameraOn" ref="video" autoplay muted playsinline class="video"></video>
         <div class="photo-grid">
           <div class="photo" v-if="photoUrl"><img :src="photoUrl" alt="Fotografia enviada">
-            <svg v-if="preview" :viewBox="'0 0 '+preview.image_size[0]+' '+preview.image_size[1]" preserveAspectRatio="none"
+            <svg v-if="preview && preview.status!=='capture_invalid'" :viewBox="'0 0 '+preview.image_size[0]+' '+preview.image_size[1]" preserveAspectRatio="none"
               role="img" aria-label="Contorno vermelho da foto, candidatos amarelos e sobreposição CAD azul ilustrativa">
               <polygon :points="pointsToSvg(preview.contour)" class="photo-outline"/>
               <g v-for="point in preview.candidates" :key="point.id">
@@ -270,10 +277,17 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
             </svg>
           </div>
           <p v-else class="muted">Fotografe a peça com a webcam ou envie uma imagem para avaliar a extração de contorno.</p>
-          <div v-if="preview" class="metrics">
+          <div v-if="preview?.status==='capture_invalid'" class="metrics">
+            <strong class="capture-invalid">Captura inconclusiva</strong>
+            <p>Não foi possível isolar a peça do fundo com confiança. Nenhum vazador foi identificado ou comparado ao CAD.</p>
+            <p>{{preview.warnings[0]}}</p>
+            <p>Tente outro fundo ou mude o contraste selecionado. Não é necessário medir a peça para repetir.</p>
+          </div>
+          <div v-else-if="preview" class="metrics">
             <strong>Resultado visual — {{preview.mode==='marks'?'marcas escuras':'aberturas claras'}}</strong>
             <span><b>{{preview.candidate_count}}</b> candidatos circulares encontrados na fotografia</span>
-            <span><b>{{confirmedFeatures}}</b> vazadores confirmados no desenho CAD</span>
+            <span v-if="selected"><b>{{confirmedFeatures}}</b> vazadores confirmados no CAD</span>
+            <span v-else>Numeração desconhecida — sem molde de referência para comparar.</span>
             <div v-if="preview.matching" class="match-report">
               <strong>Prévia de correspondência geométrica (sem calibração)</strong>
               <label class="match-toggle"><input v-model="showMatching" type="checkbox"> Mostrar contorno CAD projetado e pontos associados na foto</label>
@@ -295,6 +309,7 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
               A correspondência visual foi calculada, mas nenhuma posição ou dimensão foi validada em milímetros.
               Mesmo {{preview.matching.matched.length}} associações não comprovam a presença ou a posição correta dos vazadores físicos.
             </p>
+            <p v-else-if="!selected" class="candidate-warning">Os candidatos encontrados são apenas observações da fotografia. A numeração não foi identificada.</p>
             <p v-else-if="preview.candidate_count!==confirmedFeatures" class="candidate-warning">
               Quantidades diferentes podem resultar de pontos reais ausentes, ruído ou falha na detecção; não é uma reprovação.
             </p>
