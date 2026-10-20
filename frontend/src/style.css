@@ -125,3 +125,10 @@
 .annotation-compare>p{font-size:12px;line-height:1.5;color:#62778f;margin:2px 0}
 .annotation-row{display:flex;flex-wrap:wrap;gap:6px 12px;padding:7px 0;border-bottom:1px solid #edf2f7;font-size:12px;color:#465b73}
 .annotation-row strong{min-width:38px}
+
+/* Prévia de centros CAD com escala apenas de exibição, nunca metrológica. */
+.photo svg .family-expected-ring{fill:none;stroke:#386ef6;stroke-width:2.8;stroke-dasharray:5 4;vector-effect:non-scaling-stroke}
+.photo svg .family-expected-center{fill:#386ef6;stroke:none}
+.family-preview p{margin:2px 0;line-height:1.5;font-size:12px;color:#476482}
+.family-select{display:flex;flex-direction:column;gap:7px;font-size:12px;color:#2d527e}
+.family-select select{max-width:500px;padding:9px;border:1px solid #c8d6ea;border-radius:7px;background:white;color:#284d7e}
