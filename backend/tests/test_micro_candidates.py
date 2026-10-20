@@ -58,3 +58,37 @@ def test_multimodal_nao_mistura_detectores():
     assert result["candidate_count"] >= 1
     assert all(np.hypot(item["center"][0]-380, item["center"][1]-280) >= 9
                for item in result["micro_candidates"])
+
+
+def test_muitas_marcas_opticas_na_textura_bloqueiam_contagem_confiavel():
+    image = _scene()
+    # Padrão de tecido sintético com dezenas de microcontrastes distribuídos.
+    for y in range(150, 430, 35):
+        for x in range(220, 675, 40):
+            cv2.circle(image, (x, y), 1, (155, 155, 155), -1)
+    result = analyze_image(image, mode="holes", piece_tone="light")
+    assert result["status"] == "preview_only"
+    assert result["micro_candidate_count"] >= 12
+    assert result["micro_signal_quality"] == "excesso_de_textura"
+    assert any("Excesso de micropontos" in w for w in result["warnings"])
+
+
+def test_tres_sinais_sinteticos_nao_sao_marcados_como_textura_excessiva():
+    image = _scene()
+    for xy in [(245, 195), (580, 250), (285, 350)]:
+        cv2.circle(image, xy, 1, (155, 155, 155), -1)
+    result = analyze_image(image, mode="holes", piece_tone="light")
+    assert result["micro_candidate_count"] == 3
+    assert result["micro_signal_quality"] == "exploratorio"
+
+
+def test_silhueta_rotacionada_com_mesmas_marcas_deve_ser_detectavel_em_cenario_controlado():
+    image = _scene()
+    for xy in [(245, 195), (580, 250), (285, 350)]:
+        cv2.circle(image, xy, 1, (155, 155, 155), -1)
+    turned = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
+    original = analyze_image(image, mode="holes", piece_tone="light")
+    rotated = analyze_image(turned, mode="holes", piece_tone="light")
+    assert original["micro_candidate_count"] == 3
+    assert rotated["micro_candidate_count"] == 3
+    assert rotated["micro_signal_quality"] == "exploratorio"
