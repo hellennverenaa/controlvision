@@ -8,6 +8,8 @@ from __future__ import annotations
 import cv2
 import numpy as np
 
+from .micro_candidates import find_micro_signals
+
 
 def _center(contour):
     moments = cv2.moments(contour)
@@ -157,6 +159,13 @@ def analyze_image(image: np.ndarray, mode: str = "marks", piece_tone: str = "dar
         candidates = _circular_candidates(contours, outer, area, mode)
         advice = ("Marcas escuras circulares são apenas pontos desenhados, "
                   "não furos ou vazadores físicos. Rabiscos e texturas podem atrapalhar.")
+    # Segunda estratégia exclusiva para furos minúsculos em material claro:
+    # procura variações de contraste de poucos pixels sem exigir círculos fechados.
+    # São sinais suspeitos, separados dos candidatos circulares clássicos.
+    micro_candidates = (
+        find_micro_signals(image, polygon, piece_tone, excluded=candidates)
+        if mode == "holes" and piece_tone == "light" else []
+    )
     return {
         "status": "preview_only",
         "mode": mode,
@@ -167,8 +176,11 @@ def analyze_image(image: np.ndarray, mode: str = "marks", piece_tone: str = "dar
         "detected_regions": len(contours),
         "candidates": candidates,
         "candidate_count": len(candidates),
+        "micro_candidates": micro_candidates,
+        "micro_candidate_count": len(micro_candidates),
         "warnings": [
             advice,
+            "Sinais ópticos automáticos são suspeitas adicionais e podem ser manchas ou textura; não são furos confirmados.",
             "Nenhuma associação espacial com o CAD foi realizada.",
             "Sem calibração, tolerâncias ou resultado dimensional.",
         ],
