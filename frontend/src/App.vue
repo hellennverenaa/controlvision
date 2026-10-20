@@ -101,6 +101,17 @@ function selectUnknownSize(): void {
 const pendingFeatures = computed(() => selected.value?.features.filter(f => f.classification === 'pendente').length ?? 0)
 const confirmedFeatures = computed(() => selected.value?.features.filter(f => f.classification === 'vazador').length ?? 0)
 const suggestedHoles = computed(() => selected.value?.features.filter(f => f.shape === 'circular').length ?? 0)
+const commonCadCircleCount = computed<number|null>(() => {
+  const pieces=catalog.value?.pieces ?? []
+  if(!pieces.length) return null
+  const counts=pieces.map(piece=>piece.features.filter(feature=>feature.shape==='circular').length)
+  return counts[0]>0 && counts.every(count=>count===counts[0]) ? counts[0] : null
+})
+const excessiveCircleCandidates = computed(() => {
+  const expected=commonCadCircleCount.value
+  if(!preview.value || !expected || preview.value.mode!=='holes') return false
+  return preview.value.candidate_count>=Math.max(10,expected*3)
+})
 function confirmCircles(): void { selected.value?.features.filter(f => f.shape === 'circular').forEach(f => { f.classification = 'vazador' }) }
 function markerRadius(piece: Piece|null): number { if(!piece)return 2; return Math.max(...[piece.bbox[2]-piece.bbox[0],piece.bbox[3]-piece.bbox[1]],1)*.021 }
 function flipY(viewBox: string): string {
