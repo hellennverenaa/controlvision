@@ -129,6 +129,18 @@ Na análise assistida, o sistema também pesquisa **pequenos sinais ópticos em 
 
 Esses sinais são usados apenas para diagnosticar falhas de detecção dos vazadores minúsculos. Não são associados automaticamente a uma numeração CAD, não são contabilizados como detecção automática e não alteram percentuais, medidas ou aceitação de peças. Nenhum dado de imagem proprietária está versionado neste repositório público.
 
+## Detecção automática exploratória de micropontos
+
+O detector de furos físicos possui **dois caminhos distintos** para peças claras sobre fundo contrastante:
+
+- **Círculos (amarelo):** contornos fechados detectados pela segmentação convencional.
+- **Micropontos (ciano):** componentes muito pequenos encontrados por diferença local entre imagem suavizada e fundo estimado, sem marcações manuais. A busca é limitada ao interior da silhueta (com margem de segurança), exige contraste acima do ruído e evita duplicar círculos já detectados.
+- **Pontos roxos:** posições fornecidas manualmente pelo operador, sem contar como detecção automática.
+
+**Aviso:** um microponto ciano pode ser furo real, sombra, mancha, fibra ou artefato da câmera. Não equivale a vazador confirmado, nem é usado na correspondência CAD ou na decisão de qualidade. O algoritmo pode deixar de encontrar furos de baixa resolução ou sugerir micropontos falsos. Os limiares são experimentais e ainda não foram validados com amostras reais rotuladas.
+
+O teste sintético verifica detecção de pontos de aproximadamente 1–2 pixels, superfícies lisas, ruído leve, pontos externos e ausência de duplicações. A fotografia enviada na conversa é uma captura de tela e não foi incorporada ao repositório público. Precisamos repetir com imagem original da câmera e conferir cada sugestão visual.
+
 ## Limites conhecidos
 
 - Nenhuma aprovação/reprovação automática de produção.
