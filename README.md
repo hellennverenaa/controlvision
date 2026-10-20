@@ -121,6 +121,14 @@ A API `POST /api/vision/manual-regions` recebe a **fotografia original** (não a
 
 Este teste é especialmente importante perto das bordas da peça, onde antigos filtros por área e raio mínimo rejeitavam pequenos furos.
 
+## Busca assistida em torno das marcações
+
+Depois do teste real com três marcações, foi observado contraste de intensidade de aproximadamente -1,5, 44 e 18 níveis exatamente sobre os cliques. Isso não permite confirmar furos.
+
+Na análise assistida, o sistema também pesquisa **pequenos sinais ópticos em um raio máximo de 11 pixels em torno de cada marcação**. Reporta localização sugerida, deslocamento e força do sinal local, separando-o do contraste medido no clique original. O algoritmo só procura locais situados dentro do contorno detectado; ainda pode destacar sujeira, textura, sombras e artefatos. Um sinal encontrado **NÃO confirma a existência de um vazador** e um sinal não encontrado **NÃO comprova sua ausência**.
+
+Esses sinais são usados apenas para diagnosticar falhas de detecção dos vazadores minúsculos. Não são associados automaticamente a uma numeração CAD, não são contabilizados como detecção automática e não alteram percentuais, medidas ou aceitação de peças. Nenhum dado de imagem proprietária está versionado neste repositório público.
+
 ## Limites conhecidos
 
 - Nenhuma aprovação/reprovação automática de produção.
