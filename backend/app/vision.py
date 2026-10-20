@@ -52,10 +52,12 @@ def _circular_candidates(contours, outer, outer_area, mode, parents=None, outer_
     return sorted(found, key=lambda item: (item["center"][1], item["center"][0]))[:100]
 
 
-def analyze_image(image: np.ndarray, mode: str = "marks") -> dict:
+def analyze_image(image: np.ndarray, mode: str = "marks", piece_tone: str = "dark") -> dict:
     """Localiza silhueta e possíveis círculos; não relaciona posição ao CAD."""
     if mode not in {"marks", "holes"}:
         raise ValueError("Modo de detecção inválido.")
+    if piece_tone not in {"dark", "light"}:
+        raise ValueError("Tom da peça inválido (dark/light).")
     if image is None or image.ndim != 3:
         raise ValueError("Imagem inválida.")
     height, width = image.shape[:2]
@@ -63,8 +65,9 @@ def analyze_image(image: np.ndarray, mode: str = "marks") -> dict:
         raise ValueError("Imagem muito grande: limite de 20 megapixels.")
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     smooth = cv2.GaussianBlur(gray, (3, 3), 0)
-    _, black = cv2.threshold(smooth, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-    contours, hierarchy = cv2.findContours(black, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    polarity = cv2.THRESH_BINARY if mode == "holes" and piece_tone == "light" else cv2.THRESH_BINARY_INV
+    _, mask = cv2.threshold(smooth, 0, 255, polarity + cv2.THRESH_OTSU)
+    contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     if not contours:
         raise ValueError("Nenhum contorno encontrado: revise luz e fundo.")
     outer_id = max(range(len(contours)), key=lambda n: cv2.contourArea(contours[n]))
@@ -73,13 +76,33 @@ def analyze_image(image: np.ndarray, mode: str = "marks") -> dict:
     if area < 50:
         raise ValueError("Contorno pequeno demais.")
     polygon = cv2.approxPolyDP(outer, 1.5, True).reshape(-1, 2).tolist()
+    # Na prática, fundo e mesa podem gerar um contorno muito maior que a peça.
+    # Não reportar pontos externos ao objeto como "furos" quando isto ocorrer.
+    x, y, w, h = cv2.boundingRect(outer)
+    touches_border = x <= 2 or y <= 2 or x + w >= width - 2 or y + h >= height - 2
+    suspicious_size = area < width * height * .025 or area > width * height * .80
+    if mode == "holes" and (touches_border or suspicious_size):
+        return {
+            "status": "capture_invalid",
+            "mode": mode, "units": "pixels",
+            "contour": [],
+            "contour_area_px2": round(area, 2),
+            "image_size": [width, height],
+            "detected_regions": len(contours),
+            "candidates": [], "candidate_count": 0,
+            "warnings": [
+                "Captura inconclusiva: a segmentação parece incluir o fundo ou não isola a peça.",
+                "Tente apoiar a peça em superfície de maior contraste ou mudar o tom selecionado.",
+                "Não foi realizada associação ao CAD nem inspeção dimensional.",
+            ],
+        }
     if mode == "holes":
         # Um furo claro dentro de material escuro cria um contorno filho
         # diretamente ligado à região escura principal.
         parent_ids = hierarchy[0, :, 3].tolist() if hierarchy is not None else []
         candidates = _circular_candidates(contours, outer, area, mode, parent_ids, outer_id)
-        advice = ("Aberturas claras internas são candidatas. Só funciona bem se o "
-                  "material contrastar com o fundo/iluminação; confirme cada ponto.")
+        advice = ("Aberturas internas são candidatas, não furos validados. "
+                  "A captura exige contraste entre peça e fundo; confira cada ponto.")
     else:
         # Marcas de caneta são componentes escuros, NÃO vazadores físicos.
         candidates = _circular_candidates(contours, outer, area, mode)
