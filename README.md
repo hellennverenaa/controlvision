@@ -141,6 +141,21 @@ O detector de furos físicos possui **dois caminhos distintos** para peças clar
 
 O teste sintético verifica detecção de pontos de aproximadamente 1–2 pixels, superfícies lisas, ruído leve, pontos externos e ausência de duplicações. A fotografia enviada na conversa é uma captura de tela e não foi incorporada ao repositório público. Precisamos repetir com imagem original da câmera e conferir cada sugestão visual.
 
+## Resultado do teste em várias rotações (20/10/2026)
+
+Quatro capturas de uma mesma peça clara sobre tecido azul, em orientações diferentes, mostraram que a **segmentação do contorno externo permanece funcional**, mas a detecção óptica dos vazadores **não é repetível**:
+
+- Captura vertical: um candidato circular amarelo perto da borda, sem micropontos cianos.
+- Captura inclinada: três grupos de micropontos cianos.
+- Outra captura vertical: três grupos de micropontos cianos.
+- Captura inclinada com textura mais aparente: dezenas de micropontos cianos, com numerosos falsos candidatos.
+
+**Conclusão:** três candidatos em uma única imagem não equivalem a três vazadores verificados. A forte dependência da orientação/iluminação e da textura do material bloqueia a validação da detecção automática nesta etapa.
+
+O protótipo agora apresenta **"Detecção instável: excesso de sinais compatível com textura"** se houver muitos micropontos distribuídos pela área detectada. Nesse cenário, os marcadores cianos ficam inicialmente ocultos e podem ser revelados apenas para diagnóstico. A decisão é uma heurística de triagem, não uma regra universal; peças legítimas com muitos vazadores também poderão produzir um alerta, que deverá ser revisado.
+
+Para evoluir a técnica precisamos dos **arquivos originais das fotografias**, sem sobreposição vermelha, amarela ou ciana gerada pelo ControlVision. Capturas de tela com os overlays são ótimas para entender a interface, mas inadequadas para aferir rigorosamente o detector. As fotos proprietárias não devem ser enviadas ao repositório público sem autorização.
+
 ## Limites conhecidos
 
 - Nenhuma aprovação/reprovação automática de produção.
