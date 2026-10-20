@@ -39,10 +39,13 @@ async def import_cad(file: UploadFile = File(...)):
 async def inspect_preview(
     file: UploadFile = File(...),
     mode: str = Form("marks"),
+    piece_tone: str = Form("dark"),
     cad_data: str | None = Form(None),
 ):
     if mode not in ("marks", "holes"):
         raise HTTPException(422, "Modo inválido: escolha marks ou holes.")
+    if piece_tone not in ("dark", "light"):
+        raise HTTPException(422, "Tom inválido: escolha dark ou light.")
     raw = await file.read(15_000_001)
     if len(raw) > 15_000_000:
         raise HTTPException(413, "Imagem muito grande (limite 15 MB).")
@@ -50,7 +53,9 @@ async def inspect_preview(
     if img is None:
         raise HTTPException(422, "Imagem inválida.")
     try:
-        result = analyze_image(img, mode=mode)
+        result = analyze_image(img, mode=mode, piece_tone=piece_tone)
+        if result["status"] == "capture_invalid":
+            return {**result, "matching": None}
         if cad_data is not None:
             if len(cad_data) > 2_000_000:
                 raise ValueError("Geometria CAD extensa demais.")
