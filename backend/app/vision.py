@@ -166,6 +166,18 @@ def analyze_image(image: np.ndarray, mode: str = "marks", piece_tone: str = "dar
         find_micro_signals(image, polygon, piece_tone, excluded=candidates)
         if mode == "holes" and piece_tone == "light" else []
     )
+    # Qualidade de triagem: muitos sinais em uma só peça sugerem textura,
+    # iluminação ou limiar mal ajustado. Não descartar os sinais brutos, mas
+    # não oferecer a contagem como evidência de vazadores identificados.
+    micro_density = (
+        len(micro_candidates) * 10_000 / area if area > 0 else 0.
+    )
+    excessive_micro = (
+        len(micro_candidates) >= 12 and micro_density >= 2.0
+    )
+    micro_signal_quality = (
+        "excesso_de_textura" if excessive_micro else "exploratorio"
+    )
     return {
         "status": "preview_only",
         "mode": mode,
@@ -178,9 +190,13 @@ def analyze_image(image: np.ndarray, mode: str = "marks", piece_tone: str = "dar
         "candidate_count": len(candidates),
         "micro_candidates": micro_candidates,
         "micro_candidate_count": len(micro_candidates),
+        "micro_signal_quality": micro_signal_quality,
+        "micro_signals_per_10000_px2": round(micro_density, 2),
         "warnings": [
             advice,
-            "Sinais ópticos automáticos são suspeitas adicionais e podem ser manchas ou textura; não são furos confirmados.",
+            "Excesso de micropontos: provável influência da textura/iluminação; a contagem não é confiável."
+            if excessive_micro else
+            "Micropontos são sinais ópticos suspeitos, não vazadores confirmados.",
             "Nenhuma associação espacial com o CAD foi realizada.",
             "Sem calibração, tolerâncias ou resultado dimensional.",
         ],
