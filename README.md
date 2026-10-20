@@ -167,6 +167,18 @@ Recebemos cinco imagens da mesma peça clara em diferentes orientações, cada u
 
 O código foi corrigido para permitir que uma peça clara seja um contorno aninhado na imagem sem confundir a mesa clara conectada às bordas com a peça. Foram acrescentados testes sintéticos de fundo azul e margens brancas. Fotos reais não foram versionadas no repositório público.
 
+## Anotações versus detecção automática (revisão experimental)
+
+Em uma fotografia de teste, o operador anotou três posições (M01/M02/M03) e o detector indicou 23 candidatos circulares. A comparação por proximidade em pixels revelou **uma coincidência de aproximadamente 1 px (M03 ↔ I02)**; os candidatos mais próximos de M01 e M02 estavam a aproximadamente 479 e 485 px, respectivamente. Isso demonstra que acertar a contagem de candidatos isoladamente não comprova detecção correta.
+
+Após marcar pontos e clicar **Analisar regiões marcadas**, o relatório inclui uma **associação espacial um-para-um**, em raio experimental de 12 px, mostrando: candidato automático próximo de cada marcação, distância, marcações sem associação e candidatos não associados. Inclui tanto círculos clássicos como micropontos, mantendo seus tipos separados.
+
+O raio de 12 px serve apenas para comparar coordenadas de imagens e cliques. **Não é tolerância dimensional, nem prova de furo físico**, e uma anotação pode estar deslocada. Candidatos sem anotação não são necessariamente falsos positivos.
+
+Se todas as peças do arquivo CAD apresentam a mesma contagem de geometrias circulares e a fotografia oferece candidatos em quantidade muito superior (critério provisório: pelo menos 10 e 3 vezes o número CAD), a interface exibe alerta de **possível influência da textura**. Não deduz defeitos nem altera os resultados brutos.
+
+O estudo seguinte será restringir a busca de sinais à vizinhança das geometrias CAD projetadas para várias numerações, com revisão e sem determinação artificial de escala métrica.
+
 ## Limites conhecidos
 
 - Nenhuma aprovação/reprovação automática de produção.
