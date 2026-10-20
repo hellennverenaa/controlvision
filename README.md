@@ -156,6 +156,17 @@ O protótipo agora apresenta **"Detecção instável: excesso de sinais compatí
 
 Para evoluir a técnica precisamos dos **arquivos originais das fotografias**, sem sobreposição vermelha, amarela ou ciana gerada pelo ControlVision. Capturas de tela com os overlays são ótimas para entender a interface, mas inadequadas para aferir rigorosamente o detector. As fotos proprietárias não devem ser enviadas ao repositório público sem autorização.
 
+## Validação das cinco fotografias sem overlays (20/10/2026)
+
+Recebemos cinco imagens da mesma peça clara em diferentes orientações, cada uma com **525 × 300 pixels**, sem as marcações desenhadas pela aplicação. O ensaio local do algoritmo anterior revelou dois problemas:
+
+- A máscara de peça clara por HSV podia escolher **piso/superfície clara conectada à borda** como componente externo e descartar a peça por ela aparecer aninhada na hierarquia de contornos (4 de 5 imagens do conjunto reproduziram o problema).
+- Quando a seleção ignora a profundidade da hierarquia, mas continua exigindo que o candidato não toque as margens e tenha área plausível, a **silhueta principal foi recuperada nas cinco imagens** desse teste local.
+- O detector de micropontos anterior **não recuperou os três sinais de forma estável nesses arquivos de 525 × 300 px**. Isso não contradiz resultados anteriores com capturas de maior resolução: são entradas diferentes.
+- Portanto, **não se deve reduzir indiscriminadamente os limiares para aumentar artificialmente a contagem**. A aplicação mostra aviso quando a imagem possui menos de 0,5 megapixel; essa faixa é um limiar experimental de alerta, não um requisito metrológico validado.
+
+O código foi corrigido para permitir que uma peça clara seja um contorno aninhado na imagem sem confundir a mesa clara conectada às bordas com a peça. Foram acrescentados testes sintéticos de fundo azul e margens brancas. Fotos reais não foram versionadas no repositório público.
+
 ## Limites conhecidos
 
 - Nenhuma aprovação/reprovação automática de produção.
