@@ -381,6 +381,9 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
           </div>
           <div v-else-if="preview" class="metrics">
             <strong>Resultado visual — {{preview.mode==='marks'?'marcas escuras':'aberturas claras'}}</strong>
+            <p v-if="preview.mode==='holes' && preview.image_size[0]*preview.image_size[1]<500000" class="resolution-warning">
+              Imagem reduzida ({{preview.image_size[0]}} × {{preview.image_size[1]}} px): pequenos vazadores podem perder detalhes e não ser detectados. Use a captura original em maior resolução para testar micropontos.
+            </p>
             <span><b>{{preview.candidate_count}}</b> candidatos circulares clássicos (amarelo)</span>
             <div v-if="preview.micro_signal_quality==='excesso_de_textura'" class="micro-noise-alert">
               <strong>Detecção instável: excesso de sinais compatível com textura do material.</strong>
