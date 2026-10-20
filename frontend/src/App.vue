@@ -6,7 +6,7 @@ type Piece = { id: string; name: string; size: string|null; points: number[][]; 
 type Catalog = { filename: string; format: string; units: string; count: number; pieces: Piece[]; warnings: string[] }
 type PhotoCandidate = { id: string; center: number[]; radius_px: number; circularity: number; kind: string }
 type MatchedPoint = { cad_id: string; image_id: string; expected_px: number[]; detected_px: number[] }
-type MatchPreview = { status: 'preview_only'; fit_quality: string; shape_error_relative: number; projected_contour: number[][]; matched: MatchedPoint[]; unmatched_cad: {cad_id:string;position_px:number[]}[]; unmatched_image: {image_id:string;position_px:number[]}[]; warnings: string[] }
+type MatchPreview = { status: 'preview_only'; fit_quality: string; shape_error_relative: number; visual_shape_difference_percent: number|null; projected_contour: number[][]; matched: MatchedPoint[]; unmatched_cad: {cad_id:string;position_px:number[]}[]; unmatched_image: {image_id:string;position_px:number[]}[]; warnings: string[] }
 type Preview = { status: string; contour: number[][]; image_size: number[]; detected_regions: number; mode: 'marks'|'holes'; candidates: PhotoCandidate[]; candidate_count: number; warnings: string[]; matching?: MatchPreview|null }
 
 const catalog = ref<Catalog|null>(null)
@@ -287,11 +287,19 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
             <strong>Resultado visual — {{preview.mode==='marks'?'marcas escuras':'aberturas claras'}}</strong>
             <span><b>{{preview.candidate_count}}</b> candidatos circulares encontrados na fotografia</span>
             <span v-if="selected"><b>{{confirmedFeatures}}</b> vazadores confirmados no CAD</span>
-            <span v-else>Numeração desconhecida — sem molde de referência para comparar.</span>
+            <span v-else>Numeração desconhecida — nenhum tamanho foi escolhido. A foto não permite inferir medidas reais.</span>
+            <p v-if="photoMode==='holes' && preview.candidate_count===0" class="candidate-warning">
+              Nenhum vazador identificado com confiança. Furos muito pequenos podem ser invisíveis nesta resolução; isso NÃO comprova ausência.
+            </p>
             <div v-if="preview.matching" class="match-report">
               <strong>Prévia de correspondência geométrica (sem calibração)</strong>
               <label class="match-toggle"><input v-model="showMatching" type="checkbox"> Mostrar contorno CAD projetado e pontos associados na foto</label>
               <span><b>{{preview.matching.matched.length}}</b> associações experimentais</span>
+              <p v-if="preview.matching.visual_shape_difference_percent!==null" class="shape-score">
+                Diferença visual dos contornos: <strong>{{preview.matching.visual_shape_difference_percent.toFixed(2)}}%</strong>
+                <small>Índice experimental de área não sobreposta após normalização da escala. NÃO representa percentual de erro de corte nem conformidade.</small>
+              </p>
+              <p v-else class="candidate-warning">Diferença visual indisponível: sobreposição da silhueta não confiável.</p>
               <span><b>{{preview.matching.unmatched_cad.length}}</b> pontos CAD sem associação</span>
               <span><b>{{preview.matching.unmatched_image.length}}</b> candidatos extras na foto</span>
               <p :class="preview.matching.fit_quality==='baixa'?'candidate-warning':'note'">
