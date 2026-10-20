@@ -360,7 +360,8 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
                 <p v-for="pair in preview.matching.matched" :key="pair.cad_id">{{pair.cad_id}} → {{pair.image_id}}</p>
               </details>
             </div>
-            <p v-else class="note">Correspondência indisponível nesta imagem; confira o CAD e a captura.</p>
+            <p v-else-if="unknownSize" class="note">Correspondência CAD × foto não realizada porque a numeração continua desconhecida. Isso é esperado.</p>
+            <p v-else class="note">Correspondência visual indisponível; confira o contorno, a imagem e a referência selecionada.</p>
             <p v-if="preview.matching" class="candidate-warning">
               A correspondência visual foi calculada, mas nenhuma posição ou dimensão foi validada em milímetros.
               Mesmo {{preview.matching.matched.length}} associações não comprovam a presença ou a posição correta dos vazadores físicos.
