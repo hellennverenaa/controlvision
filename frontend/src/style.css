@@ -68,3 +68,15 @@
 .shape-score{display:flex;flex-direction:column;gap:5px;margin:7px 0;padding:12px 13px;background:#eef7ff;border-radius:8px;color:#24558a;font-size:12px}
 .shape-score strong{font-size:21px;color:#1156af}
 .shape-score small{color:#586d88;font-size:11px;line-height:1.5}
+
+
+/* Revisão ampliada de pontos minúsculos: anotações humanas ≠ detecção. */
+.photo-review-controls{padding:12px 20px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-top:1px solid #edf2f7}
+.photo-review-controls .note{flex-basis:100%;margin:1px 0 6px}
+.photo-review-controls button[aria-pressed="true"]{background:#efe2ff;color:#722bb5}
+.photo-grid.with-zoom{display:flex;flex-direction:column;align-items:stretch}
+.photo-grid.with-zoom .photo.inspection-zoom{width:100%;max-width:980px}
+.photo .manual-overlay{pointer-events:none}
+.photo .manual-overlay.mark-active{pointer-events:auto;cursor:crosshair}
+.photo svg .manual-mark{pointer-events:none;fill:none;stroke:#9d3dcb;stroke-width:2.5;vector-effect:non-scaling-stroke}
+.photo svg .manual-mark circle{fill:#9d3dcb35}
