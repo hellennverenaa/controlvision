@@ -19,7 +19,11 @@ type AnnotationComparison = { association_radius_px: number; manually_marked: nu
 type ManualReport = { status: 'manual_guided_preview'; results: ManualRegion[]; annotation_comparison?: AnnotationComparison; warnings: string[] }
 type MatchedPoint = { cad_id: string; image_id: string; expected_px: number[]; detected_px: number[] }
 type MatchPreview = { status: 'preview_only'; fit_quality: string; shape_error_relative: number; visual_shape_difference_percent: number|null; projected_contour: number[][]; matched: MatchedPoint[]; unmatched_cad: {cad_id:string;position_px:number[]}[]; unmatched_image: {image_id:string;position_px:number[]}[]; warnings: string[] }
-type Preview = { status: string; contour: number[][]; image_size: number[]; detected_regions: number; mode: 'marks'|'holes'; candidates: PhotoCandidate[]; candidate_count: number; micro_candidates?: MicroSignal[]; micro_candidate_count?: number; micro_signal_quality?: string; micro_signals_per_10000_px2?: number; warnings: string[]; matching?: MatchPreview|null }
+type FamilyProfile = { piece_id: string; size: string; cad_circle_count: number; fit_quality: string;
+  shape_error_relative: number; nearby_candidates: number;
+  projected_circles: { cad_id: string; nearest_candidate_id: string|null; position_px: number[] }[] }
+type FamilyMatching = { status: string; tested_references: number; profiles: FamilyProfile[]; warnings: string[] }
+type Preview = { status: string; contour: number[][]; image_size: number[]; detected_regions: number; mode: 'marks'|'holes'; candidates: PhotoCandidate[]; candidate_count: number; micro_candidates?: MicroSignal[]; micro_candidate_count?: number; micro_signal_quality?: string; micro_signals_per_10000_px2?: number; warnings: string[]; matching?: MatchPreview|null; family_matching?: FamilyMatching|null }
 
 const catalog = ref<Catalog|null>(null)
 const selectedId = ref<string|null>(null)
@@ -37,6 +41,11 @@ const photoMode = ref<'marks'|'holes'>('marks')
 const pieceTone = ref<'dark'|'light'>('dark')
 const lastPhoto = ref<File|null>(null)
 const showMatching = ref(true)
+const showFamilyPattern = ref(true)
+const familyProfileIndex = ref(0)
+const selectedFamilyProfile = computed(() =>
+  preview.value?.family_matching?.profiles[familyProfileIndex.value] ?? null
+)
 const showNoisyMicro = ref(false)
 const zoomPhoto = ref(false)
 const annotatePhoto = ref(false)
@@ -154,11 +163,20 @@ async function processPhoto(file: File): Promise<void> {
   manualReport.value=null
   lastPhoto.value=file
   showNoisyMicro.value=false
+  familyProfileIndex.value=0
   preview.value=null;error.value='';busy.value=true
   if(photoUrl.value) URL.revokeObjectURL(photoUrl.value)
   photoUrl.value=URL.createObjectURL(file)
   try {
     const form=new FormData();form.append('file',file);form.append('mode',photoMode.value);form.append('piece_tone',pieceTone.value)
+    if (unknownSize.value && catalog.value?.pieces.length) form.append('cad_family_data',
+      JSON.stringify(catalog.value.pieces.map(piece=>({
+        id:piece.id,name:piece.name,size:piece.size,
+        points:piece.points,
+        features:piece.features.filter(feature=>feature.shape==='circular')
+          .map(feature=>({id:feature.id,center:feature.center,shape:feature.shape}))
+      })))
+    )
     if (selected.value) form.append('cad_data', JSON.stringify({
       contour: selected.value.points,
       features: selected.value.features.filter(feature=>feature.classification==='vazador')
