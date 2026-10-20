@@ -5,6 +5,7 @@ type Feature = { id: string; points: number[][]; center: number[]; shape: 'circu
 type Piece = { id: string; name: string; size: string|null; points: number[][]; features: Feature[]; bbox: number[]; area_mm2: number }
 type Catalog = { filename: string; format: string; units: string; count: number; pieces: Piece[]; warnings: string[] }
 type PhotoCandidate = { id: string; center: number[]; radius_px: number; circularity: number; kind: string }
+type MicroSignal = { id: string; center: number[]; radius_px: number; signal_levels: number; kind: string; method: string }
 type ManualMark = { id: string; x: number; y: number }
 type ManualRegion = {
   id: string; position_px: number[]; edge_distance_px: number
@@ -16,7 +17,7 @@ type ManualRegion = {
 type ManualReport = { status: 'manual_guided_preview'; results: ManualRegion[]; warnings: string[] }
 type MatchedPoint = { cad_id: string; image_id: string; expected_px: number[]; detected_px: number[] }
 type MatchPreview = { status: 'preview_only'; fit_quality: string; shape_error_relative: number; visual_shape_difference_percent: number|null; projected_contour: number[][]; matched: MatchedPoint[]; unmatched_cad: {cad_id:string;position_px:number[]}[]; unmatched_image: {image_id:string;position_px:number[]}[]; warnings: string[] }
-type Preview = { status: string; contour: number[][]; image_size: number[]; detected_regions: number; mode: 'marks'|'holes'; candidates: PhotoCandidate[]; candidate_count: number; warnings: string[]; matching?: MatchPreview|null }
+type Preview = { status: string; contour: number[][]; image_size: number[]; detected_regions: number; mode: 'marks'|'holes'; candidates: PhotoCandidate[]; candidate_count: number; micro_candidates?: MicroSignal[]; micro_candidate_count?: number; warnings: string[]; matching?: MatchPreview|null }
 
 const catalog = ref<Catalog|null>(null)
 const selectedId = ref<string|null>(null)
@@ -334,7 +335,12 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
               <polygon :points="pointsToSvg(preview.contour)" class="photo-outline"/>
               <g v-for="point in preview.candidates" :key="point.id">
                 <circle :cx="point.center[0]" :cy="point.center[1]" :r="Math.max(7, point.radius_px+4)" class="photo-point">
-                  <title>{{point.id}} · candidato na fotografia</title>
+                  <title>{{point.id}} · candidato circular clássico na fotografia</title>
+                </circle>
+              </g>
+              <g v-for="spot in preview.micro_candidates ?? []" :key="spot.id">
+                <circle :cx="spot.center[0]" :cy="spot.center[1]" :r="Math.max(8, spot.radius_px+5)" class="photo-micro-signal">
+                  <title>{{spot.id}} · pequeno sinal óptico automático, {{spot.signal_levels}} níveis. NÃO é furo confirmado.</title>
                 </circle>
               </g>
               <g v-if="showMatching && preview.matching" class="match-overlay">
@@ -373,16 +379,21 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
           </div>
           <div v-else-if="preview" class="metrics">
             <strong>Resultado visual — {{preview.mode==='marks'?'marcas escuras':'aberturas claras'}}</strong>
-            <span><b>{{preview.candidate_count}}</b> candidatos circulares detectados automaticamente na fotografia</span>
+            <span><b>{{preview.candidate_count}}</b> candidatos circulares clássicos (amarelo)</span>
+            <span><b>{{preview.micro_candidate_count ?? 0}}</b> micropontos de contraste sugeridos automaticamente (ciano, não confirmados)</span>
+            <p v-if="(preview.micro_candidate_count ?? 0)>0" class="micro-warning">
+              Micropontos encontrados automaticamente por contraste local. Podem ser furos, sujeira ou trama. Não entram na correspondência CAD nem indicam conformidade.
+            </p>
             <span><b>{{manualMarks.length}}</b> pontos marcados manualmente (não entram no algoritmo)</span>
             <details v-if="manualMarks.length"><summary>Coordenadas das marcações manuais</summary>
               <p v-for="mark in manualMarks" :key="mark.id">{{mark.id}}: ({{mark.x}}, {{mark.y}}) px — anotação visual, não medição</p>
             </details>
             <span v-if="selected"><b>{{confirmedFeatures}}</b> vazadores confirmados no CAD</span>
             <span v-else>Numeração desconhecida — nenhum tamanho foi escolhido. A foto não permite inferir medidas reais.</span>
-            <p v-if="photoMode==='holes' && preview.candidate_count===0" class="candidate-warning">
-              Nenhum vazador identificado com confiança. Furos muito pequenos podem ser invisíveis nesta resolução; isso NÃO comprova ausência.
+            <p v-if="photoMode==='holes' && preview.candidate_count===0 && !(preview.micro_candidate_count ?? 0)" class="candidate-warning">
+              Nenhum candidato óptico detectado automaticamente. Furos minúsculos podem ser invisíveis nesta resolução; isso NÃO comprova ausência.
             </p>
+            <p v-else-if="photoMode==='holes'" class="note">Os pontos amarelos e cianos são apenas candidatos ópticos, não vazadores confirmados. A fotografia atual ainda não serve para liberar peças.</p>
             <div v-if="preview.matching" class="match-report">
               <strong>Prévia de correspondência geométrica (sem calibração)</strong>
               <label class="match-toggle"><input v-model="showMatching" type="checkbox"> Mostrar contorno CAD projetado e pontos associados na foto</label>
@@ -420,7 +431,8 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
             <p>{{preview.warnings[0]}}</p>
             <details><summary>Detalhes técnicos da segmentação</summary>
               <p>{{preview.detected_regions}} contornos brutos na imagem (texturas e ruídos incluídos).</p>
-              <p v-for="point in preview.candidates" :key="point.id">{{point.id}}: centro ({{point.center.join(', ')}}) px, raio aproximado {{point.radius_px}} px.</p>
+              <p v-for="point in preview.candidates" :key="point.id">{{point.id}} (círculo): centro ({{point.center.join(', ')}}) px, raio aproximado {{point.radius_px}} px.</p>
+              <p v-for="point in preview.micro_candidates ?? []" :key="point.id">{{point.id}} (microponto): centro ({{point.center.join(', ')}}) px, sinal {{point.signal_levels}} níveis. Não é furo confirmado.</p>
             </details>
             <p><strong>Etapa 4 — comparação em mm:</strong> ainda não disponível. Exige peça física, calibração e alinhamento geométrico.</p>
           </div>
