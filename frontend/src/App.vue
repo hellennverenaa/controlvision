@@ -397,6 +397,16 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
                   <title>{{spot.id}} · pequeno sinal óptico automático, {{spot.signal_levels}} níveis. NÃO é furo confirmado.</title>
                 </circle>
               </g>
+              <g v-if="showFamilyPattern && selectedFamilyProfile && selectedFamilyProfile.fit_quality!=='baixa'"
+                class="family-projected-points">
+                <g v-for="expected in selectedFamilyProfile.projected_circles" :key="expected.cad_id">
+                  <circle :cx="expected.position_px[0]" :cy="expected.position_px[1]" r="12"
+                    class="family-expected-ring">
+                    <title>{{expected.cad_id}}: projeção ilustrativa do molde {{selectedFamilyProfile.size}}. Não é medida.</title>
+                  </circle>
+                  <circle :cx="expected.position_px[0]" :cy="expected.position_px[1]" r="2" class="family-expected-center"/>
+                </g>
+              </g>
               <g v-if="showMatching && preview.matching" class="match-overlay">
                 <polygon :points="pointsToSvg(preview.matching.projected_contour)" class="cad-illustrative-outline"/>
                 <g v-for="match in preview.matching.matched" :key="match.cad_id">
@@ -464,6 +474,29 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
               Nenhum candidato óptico detectado automaticamente. Furos minúsculos podem ser invisíveis nesta resolução; isso NÃO comprova ausência.
             </p>
             <p v-else-if="photoMode==='holes'" class="note">Os pontos amarelos e cianos são apenas candidatos ópticos, não vazadores confirmados. A fotografia atual ainda não serve para liberar peças.</p>
+            <div v-if="preview.family_matching" class="match-report family-preview">
+              <strong>Prévia do padrão CAD × foto — sem identificação de numeração</strong>
+              <p>{{preview.family_matching.tested_references}} referências avaliadas.
+                Todas utilizam escala de exibição normalizada. Nenhuma foi escolhida como tamanho real.</p>
+              <p v-if="preview.family_matching.status==='contorno_inconclusivo'" class="candidate-warning">
+                Nenhum contorno apresentou ajuste visual suficientemente confiável. As posições projetadas não devem ser utilizadas.
+              </p>
+              <template v-if="preview.family_matching.profiles.length">
+                <label class="family-select">Escolher referência apenas para visualizar o padrão:
+                  <select v-model.number="familyProfileIndex">
+                    <option v-for="(profile, index) in preview.family_matching.profiles" :key="profile.piece_id" :value="index">
+                      {{profile.size}} — ajuste {{profile.fit_quality}}, {{profile.nearby_candidates}} candidato(s) próximo(s)
+                    </option>
+                  </select>
+                </label>
+                <label class="match-toggle">
+                  <input v-model="showFamilyPattern" type="checkbox"> Mostrar em azul os três centros CAD previstos (apenas projeção ilustrativa)
+                </label>
+                <span v-if="selectedFamilyProfile"><b>{{selectedFamilyProfile.nearby_candidates}}</b> de
+                  {{selectedFamilyProfile.cad_circle_count}} geometrias circulares com algum candidato próximo, nesta referência experimental.</span>
+                <p class="note">Os nove tamanhos podem ser indistinguíveis sem escala métrica. Um encaixe aparente não identifica a numeração nem confirma os furos.</p>
+              </template>
+            </div>
             <div v-if="preview.matching" class="match-report">
               <strong>Prévia de correspondência geométrica (sem calibração)</strong>
               <label class="match-toggle"><input v-model="showMatching" type="checkbox"> Mostrar contorno CAD projetado e pontos associados na foto</label>
@@ -485,7 +518,7 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
                 <p v-for="pair in preview.matching.matched" :key="pair.cad_id">{{pair.cad_id}} → {{pair.image_id}}</p>
               </details>
             </div>
-            <p v-else-if="unknownSize" class="note">Correspondência CAD × foto não realizada porque a numeração continua desconhecida. Isso é esperado.</p>
+            <p v-else-if="unknownSize" class="note">Foi feita somente uma prévia de padrões para as referências disponíveis; a numeração continua desconhecida e não há comparação dimensional.</p>
             <p v-else class="note">Correspondência visual indisponível; confira o contorno, a imagem e a referência selecionada.</p>
             <p v-if="preview.matching" class="candidate-warning">
               A correspondência visual foi calculada, mas nenhuma posição ou dimensão foi validada em milímetros.
