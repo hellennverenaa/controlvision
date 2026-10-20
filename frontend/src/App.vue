@@ -9,7 +9,9 @@ type ManualMark = { id: string; x: number; y: number }
 type ManualRegion = {
   id: string; position_px: number[]; edge_distance_px: number
   status: 'contraste_local'|'inconclusivo'
-  gray_contrast: number|null; saturation_contrast: number|null; evidence: string
+  gray_contrast: number|null; saturation_contrast: number|null
+  nearby_signal: { position_px: number[]; offset_px: number; optical_signal_levels: number; status: string } | null
+  evidence: string
 }
 type ManualReport = { status: 'manual_guided_preview'; results: ManualRegion[]; warnings: string[] }
 type MatchedPoint = { cad_id: string; image_id: string; expected_px: number[]; detected_px: number[] }
@@ -316,7 +318,12 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
             <div v-for="point in manualReport.results" :key="point.id" class="manual-result">
               <span>{{point.id}} · {{point.status==='contraste_local'?'Contraste observado':'Inconclusivo'}}</span>
               <span>{{point.evidence}}</span>
-              <small>Distância da borda: {{point.edge_distance_px}} px · Contraste de intensidade: {{point.gray_contrast===null?'—':point.gray_contrast+' níveis'}}</small>
+              <small>Distância da borda: {{point.edge_distance_px}} px · Contraste no clique: {{point.gray_contrast===null?'—':point.gray_contrast+' níveis'}}</small>
+              <small v-if="point.nearby_signal" class="nearby-indication">
+                Sinal óptico próximo: {{point.nearby_signal.optical_signal_levels}} níveis, deslocamento {{point.nearby_signal.offset_px}} px do clique.
+                Localização sugerida ({{point.nearby_signal.position_px.join(', ')}}) px. <strong>Não é furo confirmado.</strong>
+              </small>
+              <small v-else>Nenhum sinal escuro suficientemente destacado na vizinhança do clique.</small>
             </div>
           </section>
         </div>
