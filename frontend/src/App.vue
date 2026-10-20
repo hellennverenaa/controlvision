@@ -14,7 +14,9 @@ type ManualRegion = {
   nearby_signal: { position_px: number[]; offset_px: number; optical_signal_levels: number; status: string } | null
   evidence: string
 }
-type ManualReport = { status: 'manual_guided_preview'; results: ManualRegion[]; warnings: string[] }
+type AnnotationItem = { mark_id: string; nearest_candidate_id: string|null; nearest_distance_px: number|null; associated_candidate_id: string|null; associated_candidate_type: string|null; associated_distance_px: number|null; status: string }
+type AnnotationComparison = { association_radius_px: number; manually_marked: number; nearby_associations: number; without_nearby_candidate: number; unassociated_candidates: number; marks: AnnotationItem[] }
+type ManualReport = { status: 'manual_guided_preview'; results: ManualRegion[]; annotation_comparison?: AnnotationComparison; warnings: string[] }
 type MatchedPoint = { cad_id: string; image_id: string; expected_px: number[]; detected_px: number[] }
 type MatchPreview = { status: 'preview_only'; fit_quality: string; shape_error_relative: number; visual_shape_difference_percent: number|null; projected_contour: number[][]; matched: MatchedPoint[]; unmatched_cad: {cad_id:string;position_px:number[]}[]; unmatched_image: {image_id:string;position_px:number[]}[]; warnings: string[] }
 type Preview = { status: string; contour: number[][]; image_size: number[]; detected_regions: number; mode: 'marks'|'holes'; candidates: PhotoCandidate[]; candidate_count: number; micro_candidates?: MicroSignal[]; micro_candidate_count?: number; micro_signal_quality?: string; micro_signals_per_10000_px2?: number; warnings: string[]; matching?: MatchPreview|null }
