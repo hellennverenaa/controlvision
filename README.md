@@ -101,6 +101,16 @@ Este percentual **NÃO é percentual de erro de corte, nem medida em mm, nem cri
 
 A futura medição dimensional precisará da numeração/escala correta, calibração em mm no plano físico, controle de perspectiva e correspondência rígida sem redimensionar a referência para minimizar desvios.
 
+## Revisão manual de vazadores microscópicos (experimental)
+
+No teste de uma peça clara sobre tecido azul, o sistema identificou o contorno externo, mas retornou **0 vazadores automáticos**. Esse resultado significa apenas que a imagem não apresentou candidatos reconhecidos pelos filtros atuais; **não é evidência de ausência de furos**.
+
+Na **Etapa 3**, ao carregar ou capturar a fotografia, use **Ampliar fotografia** para revisar o material na maior área de tela disponível. Se conseguir distinguir visualmente os pontos, clique em **Marcar furinhos manualmente** e depois sobre cada posição na fotografia. O sistema desenhará marcadores **roxos**, separados dos candidatos **amarelos** detectados automaticamente. É possível desfazer/limpar essas anotações; as coordenadas são indicadas em pixels de imagem.
+
+As marcações são provisórias, não são gravadas no banco e **não entram na correspondência geométrica nem alteram as contagens automáticas**. Servem para identificar onde o algoritmo não conseguiu detectar um possível furo, antes de estudar detecção melhor e câmeras de maior resolução. Ampliar digitalmente não aumenta detalhe óptico.
+
+Se a numeração ainda é desconhecida, a interface informa por que não compara com um tamanho CAD selecionado ao acaso.
+
 ## Limites conhecidos
 
 - Nenhuma aprovação/reprovação automática de produção.
