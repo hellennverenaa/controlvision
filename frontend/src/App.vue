@@ -17,7 +17,7 @@ type ManualRegion = {
 type ManualReport = { status: 'manual_guided_preview'; results: ManualRegion[]; warnings: string[] }
 type MatchedPoint = { cad_id: string; image_id: string; expected_px: number[]; detected_px: number[] }
 type MatchPreview = { status: 'preview_only'; fit_quality: string; shape_error_relative: number; visual_shape_difference_percent: number|null; projected_contour: number[][]; matched: MatchedPoint[]; unmatched_cad: {cad_id:string;position_px:number[]}[]; unmatched_image: {image_id:string;position_px:number[]}[]; warnings: string[] }
-type Preview = { status: string; contour: number[][]; image_size: number[]; detected_regions: number; mode: 'marks'|'holes'; candidates: PhotoCandidate[]; candidate_count: number; micro_candidates?: MicroSignal[]; micro_candidate_count?: number; warnings: string[]; matching?: MatchPreview|null }
+type Preview = { status: string; contour: number[][]; image_size: number[]; detected_regions: number; mode: 'marks'|'holes'; candidates: PhotoCandidate[]; candidate_count: number; micro_candidates?: MicroSignal[]; micro_candidate_count?: number; micro_signal_quality?: string; micro_signals_per_10000_px2?: number; warnings: string[]; matching?: MatchPreview|null }
 
 const catalog = ref<Catalog|null>(null)
 const selectedId = ref<string|null>(null)
@@ -35,6 +35,7 @@ const photoMode = ref<'marks'|'holes'>('marks')
 const pieceTone = ref<'dark'|'light'>('dark')
 const lastPhoto = ref<File|null>(null)
 const showMatching = ref(true)
+const showNoisyMicro = ref(false)
 const zoomPhoto = ref(false)
 const annotatePhoto = ref(false)
 const manualMarks = ref<ManualMark[]>([])
@@ -139,6 +140,7 @@ async function processPhoto(file: File): Promise<void> {
   if (lastPhoto.value !== file) manualMarks.value=[]
   manualReport.value=null
   lastPhoto.value=file
+  showNoisyMicro.value=false
   preview.value=null;error.value='';busy.value=true
   if(photoUrl.value) URL.revokeObjectURL(photoUrl.value)
   photoUrl.value=URL.createObjectURL(file)
@@ -338,7 +340,7 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
                   <title>{{point.id}} · candidato circular clássico na fotografia</title>
                 </circle>
               </g>
-              <g v-for="spot in preview.micro_candidates ?? []" :key="spot.id">
+              <g v-for="spot in (preview.micro_signal_quality==='excesso_de_textura' && !showNoisyMicro ? [] : (preview.micro_candidates ?? []))" :key="spot.id">
                 <circle :cx="spot.center[0]" :cy="spot.center[1]" :r="Math.max(8, spot.radius_px+5)" class="photo-micro-signal">
                   <title>{{spot.id}} · pequeno sinal óptico automático, {{spot.signal_levels}} níveis. NÃO é furo confirmado.</title>
                 </circle>
@@ -380,10 +382,17 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
           <div v-else-if="preview" class="metrics">
             <strong>Resultado visual — {{preview.mode==='marks'?'marcas escuras':'aberturas claras'}}</strong>
             <span><b>{{preview.candidate_count}}</b> candidatos circulares clássicos (amarelo)</span>
-            <span><b>{{preview.micro_candidate_count ?? 0}}</b> micropontos de contraste sugeridos automaticamente (ciano, não confirmados)</span>
-            <p v-if="(preview.micro_candidate_count ?? 0)>0" class="micro-warning">
-              Micropontos encontrados automaticamente por contraste local. Podem ser furos, sujeira ou trama. Não entram na correspondência CAD nem indicam conformidade.
-            </p>
+            <div v-if="preview.micro_signal_quality==='excesso_de_textura'" class="micro-noise-alert">
+              <strong>Detecção instável: excesso de sinais compatível com textura do material.</strong>
+              <p>O detector encontrou {{preview.micro_candidate_count}} micropontos, mas a contagem não é confiável para identificar vazadores. Não interprete esse número como quantidade de furos.</p>
+              <label><input v-model="showNoisyMicro" type="checkbox"> Mostrar os sinais cianos para análise técnica</label>
+            </div>
+            <template v-else>
+              <span><b>{{preview.micro_candidate_count ?? 0}}</b> micropontos de contraste sugeridos automaticamente (ciano, não confirmados)</span>
+              <p v-if="(preview.micro_candidate_count ?? 0)>0" class="micro-warning">
+                Micropontos encontrados automaticamente por contraste local. Podem ser furos, sujeira ou trama. Não entram na correspondência CAD nem indicam conformidade.
+              </p>
+            </template>
             <span><b>{{manualMarks.length}}</b> pontos marcados manualmente (não entram no algoritmo)</span>
             <details v-if="manualMarks.length"><summary>Coordenadas das marcações manuais</summary>
               <p v-for="mark in manualMarks" :key="mark.id">{{mark.id}}: ({{mark.x}}, {{mark.y}}) px — anotação visual, não medição</p>
