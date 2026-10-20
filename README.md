@@ -87,6 +87,20 @@ Na fotografia, escolha **Peça física cortada** e depois o contraste esperado: 
 
 Um único arquivo com todas as numerações já é suficiente para nossos testes de **importação e seleção visual**. Identificação automática de numeração, máscara interativa/ROI e medição dimensional ficam para validação posterior. Não é necessário comprar câmera, medir a peça com régua ou configurar PostgreSQL agora.
 
+## Peça real clara sobre tecido azul e limite da análise percentual
+
+**Novo ensaio experimental:** a imagem de uma peça clara apoiada em tecido azul mostrou que a rotina anterior identificava parte do tecido como peça e devolvia falsos vazadores. No modo "Peça física" + "Peça clara, fundo mais escuro", o protótipo agora tenta isolar o material com características de cor (saturação baixa e luminosidade alta). Essa regra é específica e **não é garantida para todas as cores e texturas**.
+
+Os furos observados são muito pequenos para a resolução da imagem reduzida usada no ensaio. Mesmo com contorno externo identificado, os círculos internos podem não ser resolvidos: **zero candidatos na foto não comprova zero furos presentes**. É necessário preservar a resolução original da captura e, futuramente, validar óptica, iluminação e repetibilidade.
+
+### O que significa o percentual mostrado
+
+Quando uma referência CAD **específica** é selecionada e o ajuste visual da foto tem qualidade suficiente, a tela pode apresentar um **percentual experimental de diferença de forma**. O cálculo é 100 × (1 − área da interseção / área da união) das duas silhuetas após *normalização ilustrativa de escala e rotação*.
+
+Este percentual **NÃO é percentual de erro de corte, nem medida em mm, nem critério de aprovação**. O ajuste ilustrativo pode esconder diferenças uniformes de tamanho. Se a numeração for desconhecida, a captura inconclusiva ou o alinhamento for ruim, não há percentual confiável a exibir. Rotações da peça no plano não são tratadas como defeitos.
+
+A futura medição dimensional precisará da numeração/escala correta, calibração em mm no plano físico, controle de perspectiva e correspondência rígida sem redimensionar a referência para minimizar desvios.
+
 ## Limites conhecidos
 
 - Nenhuma aprovação/reprovação automática de produção.
