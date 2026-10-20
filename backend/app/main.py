@@ -9,6 +9,7 @@ from .geometry import read_cad
 from .vision import analyze_image
 from .microholes import inspect_marked_regions
 from .annotation_comparison import compare_annotations
+from .family_matching import compare_size_family
 from .matching import match_visual
 
 app = FastAPI(title="ControlVision", version="0.1.0")
@@ -43,6 +44,7 @@ async def inspect_preview(
     mode: str = Form("marks"),
     piece_tone: str = Form("dark"),
     cad_data: str | None = Form(None),
+    cad_family_data: str | None = Form(None),
 ):
     if mode not in ("marks", "holes"):
         raise HTTPException(422, "Modo inválido: escolha marks ou holes.")
@@ -58,6 +60,21 @@ async def inspect_preview(
         result = analyze_image(img, mode=mode, piece_tone=piece_tone)
         if result["status"] == "capture_invalid":
             return {**result, "matching": None}
+        if cad_family_data is not None:
+            if len(cad_family_data) > 2_000_000:
+                raise ValueError("Família CAD extensa demais.")
+            try:
+                family = json.loads(cad_family_data)
+                result["family_matching"] = compare_size_family(
+                    family, result["contour"],
+                    result["candidates"],
+                    result.get("micro_candidates", []),
+                )
+            except (ValueError, TypeError, KeyError, IndexError) as exc:
+                result["family_matching"] = None
+                result["warnings"].append(
+                    "Comparação experimental da família indisponível: " + str(exc)[:140]
+                )
         if cad_data is not None:
             if len(cad_data) > 2_000_000:
                 raise ValueError("Geometria CAD extensa demais.")
