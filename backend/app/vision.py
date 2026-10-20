@@ -109,8 +109,11 @@ def analyze_image(image: np.ndarray, mode: str = "marks", piece_tone: str = "dar
         for index, contour in enumerate(contours):
             area = cv2.contourArea(contour)
             x, y, w, h = cv2.boundingRect(contour)
-            if hierarchy is not None and hierarchy[0, index, 3] != -1:
-                continue
+            # Não exigir hierarquia externa (-1). Se a foto inclui
+            # superfície clara nas bordas e tecido azul entre ela e a
+            # peça, a peça clara aparece como contorno ANINHADO no OpenCV.
+            # Rejeitamos regiões que tocam as bordas e escolhemos o maior
+            # candidato interior compatível com uma peça isolada.
             if x <= 2 or y <= 2 or x + w >= width - 2 or y + h >= height - 2:
                 continue
             if .025 * width * height <= area <= .80 * width * height:
@@ -178,6 +181,9 @@ def analyze_image(image: np.ndarray, mode: str = "marks", piece_tone: str = "dar
     micro_signal_quality = (
         "excesso_de_textura" if excessive_micro else "exploratorio"
     )
+    # Abaixo de ~0,5 MP, marcas de 1–3 px ficam fortemente dependentes
+    # de reamostragem e compressão. É aviso, não critério de aprovação.
+    low_resolution = mode == "holes" and (width * height < 500_000)
     return {
         "status": "preview_only",
         "mode": mode,
@@ -194,6 +200,9 @@ def analyze_image(image: np.ndarray, mode: str = "marks", piece_tone: str = "dar
         "micro_signals_per_10000_px2": round(micro_density, 2),
         "warnings": [
             advice,
+            "Fotografia reduzida: micropontos podem desaparecer por reamostragem; use a captura original com mais resolução."
+            if low_resolution else
+            "A resolução ainda não foi validada para os tamanhos dos vazadores.",
             "Excesso de micropontos: provável influência da textura/iluminação; a contagem não é confiável."
             if excessive_micro else
             "Micropontos são sinais ópticos suspeitos, não vazadores confirmados.",
