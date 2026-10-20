@@ -79,6 +79,14 @@ Depois de confirmar as geometrias internas no CAD e abrir a Etapa 3, a API tenta
 
 Testes sintéticos cobrem diferentes rotações, um candidato extra e um vazador CAD não encontrado na fotografia. Necessitamos de ensaio real com peça correspondente ao DXF antes de declarar a correspondência validada.
 
+## Teste com várias numerações e peça sem tamanho conhecido
+
+Se o arquivo DXF ou HPGL contiver **mais de uma peça**, o sistema não escolhe automaticamente a primeira. Na Etapa 2, o operador pode selecionar **Não sei a numeração** para continuar sem definir um tamanho. Nesse modo, a Etapa 3 analisa somente a fotografia: **nenhuma geometria CAD é enviada à correspondência**. A plataforma não pode inferir o tamanho real em milímetros de uma imagem sem calibração, mesmo que os moldes tenham formas semelhantes.
+
+Na fotografia, escolha **Peça física cortada** e depois o contraste esperado: **peça escura/fundo claro** ou **peça clara/fundo mais escuro**. Se o algoritmo selecionar praticamente o fundo inteiro, tocar as bordas da captura ou selecionar uma região improvável, exibirá **Captura inconclusiva**, sem lista de vazadores nem sobreposição CAD. Este bloqueio é heurístico e não detecta todas as falhas possíveis.
+
+Um único arquivo com todas as numerações já é suficiente para nossos testes de **importação e seleção visual**. Identificação automática de numeração, máscara interativa/ROI e medição dimensional ficam para validação posterior. Não é necessário comprar câmera, medir a peça com régua ou configurar PostgreSQL agora.
+
 ## Limites conhecidos
 
 - Nenhuma aprovação/reprovação automática de produção.
