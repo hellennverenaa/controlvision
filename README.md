@@ -179,6 +179,14 @@ Se todas as peças do arquivo CAD apresentam a mesma contagem de geometrias circ
 
 O estudo seguinte será restringir a busca de sinais à vizinhança das geometrias CAD projetadas para várias numerações, com revisão e sem determinação artificial de escala métrica.
 
+## Prévia de padrão CAD com numeração desconhecida
+
+Se o CAD contiver vários tamanhos e o operador selecionar **Não sei a numeração**, o backend pode avaliar **até 15 geometrias** como hipóteses de posição do contorno e das geometrias circulares internas. A Etapa 3 mostra as referências avaliadas e permite selecionar **uma referência apenas para visualização**, desenhando seus centros previstos com círculos azuis tracejados. Amarelo = círculo detectado na foto; ciano = microcontraste; roxo = anotação humana.
+
+Cada referência usa um fator de escala extraído da área das silhuetas **apenas para a projeção ilustrativa na fotografia**. Essa escala elimina as diferenças absolutas entre numerações: portanto, a comparação **não identifica tamanho, não mede corte, não calcula erro dimensional, nem determina conformidade**. Vários tamanhos podem parecer igualmente compatíveis. O sistema não altera o CAD original nem escolhe a numeração.
+
+Há um controle específico de quantos candidatos visuais estão próximos às posições projetadas, mas **proximidade não confirma vazador**; a malha pode produzir pequenos falsos sinais próximos por acaso. Sobreposições com ajuste de contorno baixo não devem ser usadas. É imprescindível validar esse caminho com peças físicas e referência verificada antes de qualquer conclusão industrial.
+
 ## Limites conhecidos
 
 - Nenhuma aprovação/reprovação automática de produção.
