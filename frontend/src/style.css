@@ -64,3 +64,7 @@
 .tone-selector strong{width:100%;color:#27548b;font-size:12px}
 .tone-selector label{display:flex;align-items:center;gap:6px}
 .capture-invalid{color:#a85124!important}
+
+.shape-score{display:flex;flex-direction:column;gap:5px;margin:7px 0;padding:12px 13px;background:#eef7ff;border-radius:8px;color:#24558a;font-size:12px}
+.shape-score strong{font-size:21px;color:#1156af}
+.shape-score small{color:#586d88;font-size:11px;line-height:1.5}
