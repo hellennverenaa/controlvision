@@ -331,6 +331,27 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
           <section v-if="manualReport" class="manual-results" aria-label="Resultados da análise assistida">
             <strong>Análise assistida por marcações — pixels, sem conclusão dimensional</strong>
             <p class="note">Pontos com contraste podem ser furos, sombras ou textura. Pontos inconclusivos não significam furos ausentes.</p>
+            <section v-if="manualReport.annotation_comparison" class="annotation-compare">
+              <strong>Marcadores humanos × candidatos automáticos (proximidade visual)</strong>
+              <p>{{manualReport.annotation_comparison.nearby_associations}} de {{manualReport.annotation_comparison.manually_marked}}
+                marcações com candidato próximo (até {{manualReport.annotation_comparison.association_radius_px}} px).</p>
+              <p>{{manualReport.annotation_comparison.unassociated_candidates}} candidatos sem correspondência
+                com os pontos marcados. Isso não determina quais são furos.</p>
+              <div v-for="comparison in manualReport.annotation_comparison.marks" :key="comparison.mark_id" class="annotation-row">
+                <strong>{{comparison.mark_id}}</strong>
+                <span v-if="comparison.associated_candidate_id">
+                  Próximo: {{comparison.associated_candidate_id}}
+                  ({{comparison.associated_candidate_type}}) a {{comparison.associated_distance_px}} px.
+                </span>
+                <span v-else>
+                  Sem candidato próximo.
+                  <template v-if="comparison.nearest_candidate_id">
+                    O mais próximo é {{comparison.nearest_candidate_id}} a {{comparison.nearest_distance_px}} px.
+                  </template>
+                </span>
+              </div>
+              <p class="note">Raio de proximidade não é tolerância dimensional nem confirmação de um vazador físico.</p>
+            </section>
             <div v-for="point in manualReport.results" :key="point.id" class="manual-result">
               <span>{{point.id}} · {{point.status==='contraste_local'?'Contraste observado':'Inconclusivo'}}</span>
               <span>{{point.evidence}}</span>
