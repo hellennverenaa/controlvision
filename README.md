@@ -111,6 +111,16 @@ As marcações são provisórias, não são gravadas no banco e **não entram na
 
 Se a numeração ainda é desconhecida, a interface informa por que não compara com um tamanho CAD selecionado ao acaso.
 
+## Inspeção assistida de furinhos muito pequenos
+
+Se o modo de peça física mostra **0 candidatos**, mas alguém vê furinhos, continue usando **Marcar furinhos manualmente** na Etapa 3 e em seguida clique **Analisar regiões marcadas**.
+
+A API `POST /api/vision/manual-regions` recebe a **fotografia original** (não a captura de tela), o tom da peça e as coordenadas inseridas pelo operador. Para cada ponto, examina brilho e saturação dentro da peça, compara com a vizinhança e indica **Contraste observado** ou **Inconclusivo**.
+
+**Atenção:** essas marcações são humanas, não detecções automáticas. Contraste também pode ser sujeira, pigmento, trama ou sombra. O relatório não confirma furos passantes, não compara o CAD e não avalia defeito. Um ponto inconclusivo **não significa furo ausente**. O fluxo é um instrumento de diagnóstico para melhorar depois o detector automático com material de teste real.
+
+Este teste é especialmente importante perto das bordas da peça, onde antigos filtros por área e raio mínimo rejeitavam pequenos furos.
+
 ## Limites conhecidos
 
 - Nenhuma aprovação/reprovação automática de produção.
