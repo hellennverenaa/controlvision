@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .geometry import read_cad
 from .vision import analyze_image
 from .microholes import inspect_marked_regions
+from .annotation_comparison import compare_annotations
 from .matching import match_visual
 
 app = FastAPI(title="ControlVision", version="0.1.0")
@@ -98,6 +99,14 @@ async def inspect_manual_regions(
         preview = analyze_image(image, mode="holes", piece_tone=piece_tone)
         if preview["status"] != "preview_only":
             raise ValueError("Contorno não isolado. Não é possível analisar marcas.")
-        return inspect_marked_regions(image, preview["contour"], marks, piece_tone=piece_tone)
+        diagnosis = inspect_marked_regions(
+            image, preview["contour"], marks, piece_tone=piece_tone
+        )
+        diagnosis["annotation_comparison"] = compare_annotations(
+            marks,
+            preview["candidates"],
+            preview.get("micro_candidates", []),
+        )
+        return diagnosis
     except (ValueError, TypeError, KeyError, IndexError) as exc:
         raise HTTPException(422, str(exc)[:200]) from exc
