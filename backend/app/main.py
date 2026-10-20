@@ -98,6 +98,6 @@ async def inspect_manual_regions(
         preview = analyze_image(image, mode="holes", piece_tone=piece_tone)
         if preview["status"] != "preview_only":
             raise ValueError("Contorno não isolado. Não é possível analisar marcas.")
-        return inspect_marked_regions(image, preview["contour"], marks)
+        return inspect_marked_regions(image, preview["contour"], marks, piece_tone=piece_tone)
     except (ValueError, TypeError, KeyError, IndexError) as exc:
         raise HTTPException(422, str(exc)[:200]) from exc
