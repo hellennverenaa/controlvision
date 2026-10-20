@@ -54,3 +54,39 @@ def test_marks_limits_and_invalid_points():
     for marks in [[], [{"x": -1, "y": 20}], [{"x": float("nan"), "y": 50}], [{}]]:
         with pytest.raises(ValueError):
             inspect_marked_regions(image, preview["contour"], marks)
+
+
+def test_busca_sinal_pequeno_proximo_a_clique_impreciso():
+    image = _scene()
+    cv2.circle(image, (190, 185), 2, (35, 35, 35), -1)
+    result = _inspect(image, [(184, 180)])["results"][0]
+    assert result["nearby_signal"] is not None
+    spot = result["nearby_signal"]
+    assert spot["status"] == "regiao_optica_suspeita_nao_confirmada"
+    assert abs(spot["position_px"][0] - 190) <= 2
+    assert abs(spot["position_px"][1] - 185) <= 2
+    assert spot["offset_px"] > 0
+    assert "contraste_local" != spot["status"]
+
+
+def test_sem_sinal_vizinho_nao_inventa_ponto():
+    image = _scene()
+    result = _inspect(image, [(185, 190)])["results"][0]
+    assert result["nearby_signal"] is None
+
+
+def test_busca_local_respeita_borda_da_peca():
+    image = _scene()
+    # Uma mancha no tecido ao lado da peça não vira furo da peça.
+    cv2.circle(image, (99, 170), 3, (0, 0, 0), -1)
+    result = _inspect(image, [(109, 170)])["results"][0]
+    assert result["nearby_signal"] is None
+
+
+def test_contraste_local_nao_define_qualidade_industrial():
+    image = _scene()
+    cv2.circle(image, (250, 180), 2, (25, 25, 25), -1)
+    result = _inspect(image, [(245, 175)])
+    assert result["status"] == "manual_guided_preview"
+    assert "mm" not in str(result)
+    assert result["results"][0]["nearby_signal"] is not None
