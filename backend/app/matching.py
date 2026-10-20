@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import math
 import numpy as np
+from shapely.geometry import Polygon
 
 
 def _polygon(points):
@@ -138,12 +139,25 @@ def match_visual(cad_contour, photo_contour, cad_features, image_candidates):
             "expected_px": expected[ei]["position_px"],
             "detected_px": observed[oi]["position_px"],
         })
+    # Apenas índice de diferença DE FORMA 2D, após escala de visualização.
+    # Não representa percentagem de erro dimensional nem tolerância metrológica.
+    overlay_difference_percent = None
+    if reliable_enough:
+        silhouette_a = Polygon([project(p) for p in _polygon(cad_contour)])
+        silhouette_b = Polygon(photo)
+        if silhouette_a.is_valid and silhouette_b.is_valid:
+            union = silhouette_a.union(silhouette_b).area
+            if union > 0:
+                overlay_difference_percent = round(
+                    100 * (1 - silhouette_a.intersection(silhouette_b).area / union), 2
+                )
     return {
         "status": "preview_only",
         "units": "pixels_nao_calibrados",
         "registration": "alinhamento_ilustrativo_por_silhueta",
         "fit_quality": quality,
         "shape_error_relative": round(relative_error, 4),
+        "visual_shape_difference_percent": overlay_difference_percent,
         "matched": matches,
         "unmatched_cad": [p for i, p in enumerate(expected) if i not in used_cad],
         "unmatched_image": [p for i, p in enumerate(observed) if i not in used_image],
@@ -151,6 +165,7 @@ def match_visual(cad_contour, photo_contour, cad_features, image_candidates):
         "warnings": [
             "Correspondência apenas visual; escala ilustrativa não é calibração.",
             "Pontos não associados podem decorrer de sombra, rabiscos e perspectiva.",
+            "Diferença percentual visual usa normalização de escala e não representa erro de corte.",
             "Não inferir medidas em mm, conformidade ou defeitos nesta prévia.",
         ],
     }
