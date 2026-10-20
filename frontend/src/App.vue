@@ -6,6 +6,12 @@ type Piece = { id: string; name: string; size: string|null; points: number[][]; 
 type Catalog = { filename: string; format: string; units: string; count: number; pieces: Piece[]; warnings: string[] }
 type PhotoCandidate = { id: string; center: number[]; radius_px: number; circularity: number; kind: string }
 type ManualMark = { id: string; x: number; y: number }
+type ManualRegion = {
+  id: string; position_px: number[]; edge_distance_px: number
+  status: 'contraste_local'|'inconclusivo'
+  gray_contrast: number|null; saturation_contrast: number|null; evidence: string
+}
+type ManualReport = { status: 'manual_guided_preview'; results: ManualRegion[]; warnings: string[] }
 type MatchedPoint = { cad_id: string; image_id: string; expected_px: number[]; detected_px: number[] }
 type MatchPreview = { status: 'preview_only'; fit_quality: string; shape_error_relative: number; visual_shape_difference_percent: number|null; projected_contour: number[][]; matched: MatchedPoint[]; unmatched_cad: {cad_id:string;position_px:number[]}[]; unmatched_image: {image_id:string;position_px:number[]}[]; warnings: string[] }
 type Preview = { status: string; contour: number[][]; image_size: number[]; detected_regions: number; mode: 'marks'|'holes'; candidates: PhotoCandidate[]; candidate_count: number; warnings: string[]; matching?: MatchPreview|null }
@@ -29,8 +35,26 @@ const showMatching = ref(true)
 const zoomPhoto = ref(false)
 const annotatePhoto = ref(false)
 const manualMarks = ref<ManualMark[]>([])
+const manualReport = ref<ManualReport|null>(null)
+const manualBusy = ref(false)
+async function evaluateManualMarks(): Promise<void> {
+  if (!lastPhoto.value || !manualMarks.value.length || manualBusy.value || photoMode.value!=='holes') return
+  manualBusy.value=true;manualReport.value=null;error.value=''
+  try {
+    const form = new FormData()
+    form.append('file',lastPhoto.value)
+    form.append('marks_json',JSON.stringify(manualMarks.value))
+    form.append('piece_tone',pieceTone.value)
+    const response=await fetch('/api/vision/manual-regions',{method:'POST',body:form})
+    const data=await response.json()
+    if(!response.ok)throw new Error(data.detail??'Falha ao analisar as regiões marcadas.')
+    manualReport.value=data as ManualReport
+  } catch(e) {error.value=e instanceof Error?e.message:'Erro inesperado'}
+  finally{manualBusy.value=false}
+}
 function markPhoto(event: MouseEvent): void {
   if (!annotatePhoto.value || !preview.value) return
+  manualReport.value=null
   const svg = event.currentTarget as SVGSVGElement
   const matrix = svg.getScreenCTM()
   if (!matrix) return
@@ -66,6 +90,7 @@ function selectUnknownSize(): void {
   preview.value=null;lastPhoto.value=null;manualMarks.value=[]
   if(photoUrl.value) URL.revokeObjectURL(photoUrl.value)
   photoUrl.value=''
+  manualMarks.value=[];manualReport.value=null
 }
 const pendingFeatures = computed(() => selected.value?.features.filter(f => f.classification === 'pendente').length ?? 0)
 const confirmedFeatures = computed(() => selected.value?.features.filter(f => f.classification === 'vazador').length ?? 0)
@@ -109,6 +134,7 @@ async function importFile(event: Event): Promise<void> {
 
 async function processPhoto(file: File): Promise<void> {
   if (lastPhoto.value !== file) manualMarks.value=[]
+  manualReport.value=null
   lastPhoto.value=file
   preview.value=null;error.value='';busy.value=true
   if(photoUrl.value) URL.revokeObjectURL(photoUrl.value)
@@ -148,8 +174,8 @@ function photograph(): void {
   canvas.getContext('2d')?.drawImage(video.value,0,0)
   canvas.toBlob(blob=>{if(blob) void processPhoto(new File([blob],'captura.png',{type:'image/png'}))},'image/png')
 }
-watch([photoMode,pieceTone], () => { if(lastPhoto.value) void processPhoto(lastPhoto.value) })
-watch(selectedId, () => {preview.value=null;lastPhoto.value=null;manualMarks.value=[];if(photoUrl.value)URL.revokeObjectURL(photoUrl.value);photoUrl.value='' })
+watch([photoMode,pieceTone], () => { manualReport.value=null; if(lastPhoto.value) void processPhoto(lastPhoto.value) })
+watch(selectedId, () => {preview.value=null;lastPhoto.value=null;manualMarks.value=[];manualReport.value=null;if(photoUrl.value)URL.revokeObjectURL(photoUrl.value);photoUrl.value='' })
 onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl.value)})
 </script>
 
@@ -279,9 +305,20 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
           <button class="button secondary" type="button" :aria-pressed="annotatePhoto" @click="annotatePhoto=!annotatePhoto">
             {{annotatePhoto?'Encerrar marcação manual':'Marcar furinhos manualmente'}}
           </button>
-          <button v-if="manualMarks.length" class="button secondary" type="button" @click="manualMarks.pop()">Desfazer último ponto</button>
-          <button v-if="manualMarks.length" class="button secondary" type="button" @click="manualMarks=[]">Limpar marcações</button>
-          <p class="note">Ampliação visual não adiciona resolução. As marcações roxas indicam somente o que o operador selecionou, não detecção automática.</p>
+          <button v-if="manualMarks.length" class="button secondary" type="button" @click="manualMarks.pop();manualReport=null">Desfazer último ponto</button>
+          <button v-if="manualMarks.length" class="button secondary" type="button" @click="manualMarks=[];manualReport=null">Limpar marcações</button>
+          <button v-if="manualMarks.length && photoMode==='holes'" class="button primary" type="button" :disabled="manualBusy"
+            @click="evaluateManualMarks">{{manualBusy?'Analisando…':'Analisar regiões marcadas'}}</button>
+          <p class="note">Ampliação não cria detalhes na imagem. Os pontos roxos são anotações humanas. A análise procura contraste apenas ao redor desses pontos e <strong>não é detecção automática nem confirmação de furo.</strong></p>
+          <section v-if="manualReport" class="manual-results" aria-label="Resultados da análise assistida">
+            <strong>Análise assistida por marcações — pixels, sem conclusão dimensional</strong>
+            <p class="note">Pontos com contraste podem ser furos, sombras ou textura. Pontos inconclusivos não significam furos ausentes.</p>
+            <div v-for="point in manualReport.results" :key="point.id" class="manual-result">
+              <span>{{point.id}} · {{point.status==='contraste_local'?'Contraste observado':'Inconclusivo'}}</span>
+              <span>{{point.evidence}}</span>
+              <small>Distância da borda: {{point.edge_distance_px}} px · Contraste de intensidade: {{point.gray_contrast===null?'—':point.gray_contrast+' níveis'}}</small>
+            </div>
+          </section>
         </div>
         <div :class="['photo-grid',zoomPhoto?'with-zoom':'']">
           <div :class="['photo',zoomPhoto?'inspection-zoom':'']" v-if="photoUrl"><img :src="photoUrl" alt="Fotografia enviada">
