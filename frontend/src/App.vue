@@ -5,6 +5,7 @@ type Feature = { id: string; points: number[][]; center: number[]; shape: 'circu
 type Piece = { id: string; name: string; size: string|null; points: number[][]; features: Feature[]; bbox: number[]; area_mm2: number }
 type Catalog = { filename: string; format: string; units: string; count: number; pieces: Piece[]; warnings: string[] }
 type PhotoCandidate = { id: string; center: number[]; radius_px: number; circularity: number; kind: string }
+type ManualMark = { id: string; x: number; y: number }
 type MatchedPoint = { cad_id: string; image_id: string; expected_px: number[]; detected_px: number[] }
 type MatchPreview = { status: 'preview_only'; fit_quality: string; shape_error_relative: number; visual_shape_difference_percent: number|null; projected_contour: number[][]; matched: MatchedPoint[]; unmatched_cad: {cad_id:string;position_px:number[]}[]; unmatched_image: {image_id:string;position_px:number[]}[]; warnings: string[] }
 type Preview = { status: string; contour: number[][]; image_size: number[]; detected_regions: number; mode: 'marks'|'holes'; candidates: PhotoCandidate[]; candidate_count: number; warnings: string[]; matching?: MatchPreview|null }
@@ -25,6 +26,26 @@ const photoMode = ref<'marks'|'holes'>('marks')
 const pieceTone = ref<'dark'|'light'>('dark')
 const lastPhoto = ref<File|null>(null)
 const showMatching = ref(true)
+const zoomPhoto = ref(false)
+const annotatePhoto = ref(false)
+const manualMarks = ref<ManualMark[]>([])
+function markPhoto(event: MouseEvent): void {
+  if (!annotatePhoto.value || !preview.value) return
+  const svg = event.currentTarget as SVGSVGElement
+  const matrix = svg.getScreenCTM()
+  if (!matrix) return
+  const p = svg.createSVGPoint()
+  p.x = event.clientX
+  p.y = event.clientY
+  const pos = p.matrixTransform(matrix.inverse())
+  const [w, h] = preview.value.image_size
+  if (pos.x < 0 || pos.y < 0 || pos.x >= w || pos.y >= h) return
+  manualMarks.value.push({
+    id: 'M' + String(manualMarks.value.length + 1).padStart(2, '0'),
+    x: Math.round(pos.x * 10) / 10,
+    y: Math.round(pos.y * 10) / 10,
+  })
+}
 function selectStep(value: 1|2|3): void {
   if (value===2 && !catalog.value) return
   if (value===3 && !selected.value && !(unknownSize.value && !!catalog.value?.pieces.length)) return
@@ -42,7 +63,7 @@ function selectPiece(piece: Piece): void { unknownSize.value=false; selectedId.v
 function selectUnknownSize(): void {
   unknownSize.value=true
   selectedId.value=null
-  preview.value=null;lastPhoto.value=null
+  preview.value=null;lastPhoto.value=null;manualMarks.value=[]
   if(photoUrl.value) URL.revokeObjectURL(photoUrl.value)
   photoUrl.value=''
 }
@@ -87,6 +108,7 @@ async function importFile(event: Event): Promise<void> {
 }
 
 async function processPhoto(file: File): Promise<void> {
+  if (lastPhoto.value !== file) manualMarks.value=[]
   lastPhoto.value=file
   preview.value=null;error.value='';busy.value=true
   if(photoUrl.value) URL.revokeObjectURL(photoUrl.value)
@@ -127,7 +149,7 @@ function photograph(): void {
   canvas.toBlob(blob=>{if(blob) void processPhoto(new File([blob],'captura.png',{type:'image/png'}))},'image/png')
 }
 watch([photoMode,pieceTone], () => { if(lastPhoto.value) void processPhoto(lastPhoto.value) })
-watch(selectedId, () => {preview.value=null;lastPhoto.value=null;if(photoUrl.value)URL.revokeObjectURL(photoUrl.value);photoUrl.value='' })
+watch(selectedId, () => {preview.value=null;lastPhoto.value=null;manualMarks.value=[];if(photoUrl.value)URL.revokeObjectURL(photoUrl.value);photoUrl.value='' })
 onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl.value)})
 </script>
 
@@ -250,8 +272,19 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
           <button v-if="cameraOn" class="button primary" @click="photograph">Fotografar</button>
         </div>
         <video v-if="cameraOn" ref="video" autoplay muted playsinline class="video"></video>
-        <div class="photo-grid">
-          <div class="photo" v-if="photoUrl"><img :src="photoUrl" alt="Fotografia enviada">
+        <div v-if="photoUrl && preview" class="photo-review-controls">
+          <button class="button secondary" type="button" @click="zoomPhoto=!zoomPhoto">
+            {{zoomPhoto?'Reduzir fotografia':'Ampliar fotografia'}}
+          </button>
+          <button class="button secondary" type="button" :aria-pressed="annotatePhoto" @click="annotatePhoto=!annotatePhoto">
+            {{annotatePhoto?'Encerrar marcação manual':'Marcar furinhos manualmente'}}
+          </button>
+          <button v-if="manualMarks.length" class="button secondary" type="button" @click="manualMarks.pop()">Desfazer último ponto</button>
+          <button v-if="manualMarks.length" class="button secondary" type="button" @click="manualMarks=[]">Limpar marcações</button>
+          <p class="note">Ampliação visual não adiciona resolução. As marcações roxas indicam somente o que o operador selecionou, não detecção automática.</p>
+        </div>
+        <div :class="['photo-grid',zoomPhoto?'with-zoom':'']">
+          <div :class="['photo',zoomPhoto?'inspection-zoom':'']" v-if="photoUrl"><img :src="photoUrl" alt="Fotografia enviada">
             <svg v-if="preview && preview.status!=='capture_invalid'" :viewBox="'0 0 '+preview.image_size[0]+' '+preview.image_size[1]" preserveAspectRatio="none"
               role="img" aria-label="Contorno vermelho da foto, candidatos amarelos e sobreposição CAD azul ilustrativa">
               <polygon :points="pointsToSvg(preview.contour)" class="photo-outline"/>
@@ -275,6 +308,17 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
                 </g>
               </g>
             </svg>
+            <svg v-if="preview" :viewBox="'0 0 '+preview.image_size[0]+' '+preview.image_size[1]"
+              preserveAspectRatio="none" :class="['manual-overlay',annotatePhoto?'mark-active':'']"
+              role="img" aria-label="Marcadores manuais roxos posicionados pelo operador"
+              @click="markPhoto">
+              <g v-for="mark in manualMarks" :key="mark.id" class="manual-mark">
+                <circle :cx="mark.x" :cy="mark.y" r="8"/>
+                <line :x1="mark.x-14" :y1="mark.y" :x2="mark.x+14" :y2="mark.y"/>
+                <line :x1="mark.x" :y1="mark.y-14" :x2="mark.x" :y2="mark.y+14"/>
+                <title>{{mark.id}}: marcação manual, não vazador confirmado</title>
+              </g>
+            </svg>
           </div>
           <p v-else class="muted">Fotografe a peça com a webcam ou envie uma imagem para avaliar a extração de contorno.</p>
           <div v-if="preview?.status==='capture_invalid'" class="metrics">
@@ -285,7 +329,11 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
           </div>
           <div v-else-if="preview" class="metrics">
             <strong>Resultado visual — {{preview.mode==='marks'?'marcas escuras':'aberturas claras'}}</strong>
-            <span><b>{{preview.candidate_count}}</b> candidatos circulares encontrados na fotografia</span>
+            <span><b>{{preview.candidate_count}}</b> candidatos circulares detectados automaticamente na fotografia</span>
+            <span><b>{{manualMarks.length}}</b> pontos marcados manualmente (não entram no algoritmo)</span>
+            <details v-if="manualMarks.length"><summary>Coordenadas das marcações manuais</summary>
+              <p v-for="mark in manualMarks" :key="mark.id">{{mark.id}}: ({{mark.x}}, {{mark.y}}) px — anotação visual, não medição</p>
+            </details>
             <span v-if="selected"><b>{{confirmedFeatures}}</b> vazadores confirmados no CAD</span>
             <span v-else>Numeração desconhecida — nenhum tamanho foi escolhido. A foto não permite inferir medidas reais.</span>
             <p v-if="photoMode==='holes' && preview.candidate_count===0" class="candidate-warning">
