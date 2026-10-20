@@ -11,6 +11,7 @@ type Preview = { status: string; contour: number[][]; image_size: number[]; dete
 
 const catalog = ref<Catalog|null>(null)
 const selectedId = ref<string|null>(null)
+const unknownSize = ref(false)
 const search = ref('')
 const busy = ref(false)
 const error = ref('')
@@ -21,11 +22,12 @@ const cameraOn = ref(false)
 const highlightedFeatureId = ref<string|null>(null)
 const step = ref<1|2|3>(1)
 const photoMode = ref<'marks'|'holes'>('marks')
+const pieceTone = ref<'dark'|'light'>('dark')
 const lastPhoto = ref<File|null>(null)
 const showMatching = ref(true)
 function selectStep(value: 1|2|3): void {
   if (value===2 && !catalog.value) return
-  if (value===3 && !selected.value) return
+  if (value===3 && !selected.value && !(unknownSize.value && !!catalog.value?.pieces.length)) return
   step.value=value
   window.scrollTo({top:0,behavior:'smooth'})
 }
@@ -34,7 +36,16 @@ let stream: MediaStream|null = null
 const filtered = computed(() => (catalog.value?.pieces ?? []).filter(p =>
   (p.name + ' ' + p.id + ' ' + (p.size ?? '')).toLowerCase().includes(search.value.toLowerCase())
 ))
-const selected = computed(() => catalog.value?.pieces.find(p => p.id === selectedId.value) ?? null)
+const selected = computed(() => unknownSize.value ? null : catalog.value?.pieces.find(p => p.id === selectedId.value) ?? null)
+const canAdvance = computed(() => !!selected.value || (unknownSize.value && !!catalog.value?.pieces.length))
+function selectPiece(piece: Piece): void { unknownSize.value=false; selectedId.value=piece.id }
+function selectUnknownSize(): void {
+  unknownSize.value=true
+  selectedId.value=null
+  preview.value=null;lastPhoto.value=null
+  if(photoUrl.value) URL.revokeObjectURL(photoUrl.value)
+  photoUrl.value=''
+}
 const pendingFeatures = computed(() => selected.value?.features.filter(f => f.classification === 'pendente').length ?? 0)
 const confirmedFeatures = computed(() => selected.value?.features.filter(f => f.classification === 'vazador').length ?? 0)
 const suggestedHoles = computed(() => selected.value?.features.filter(f => f.shape === 'circular').length ?? 0)
@@ -66,9 +77,11 @@ async function importFile(event: Event): Promise<void> {
     const body=await response.json()
     if (!response.ok) throw Error(body.detail ?? 'Não foi possível importar.')
     catalog.value=body as Catalog
-    selectedId.value=catalog.value.pieces[0]?.id ?? null
+    selectedId.value=catalog.value.pieces.length===1 ? catalog.value.pieces[0].id : null
+    unknownSize.value=catalog.value.pieces.length>1
+    photoMode.value='holes'
     highlightedFeatureId.value=null
-    step.value=2
+    step.value=catalog.value.pieces.length?2:1
   } catch (e) { error.value=e instanceof Error?e.message:'Erro inesperado' }
   finally { busy.value=false }
 }
@@ -79,7 +92,7 @@ async function processPhoto(file: File): Promise<void> {
   if(photoUrl.value) URL.revokeObjectURL(photoUrl.value)
   photoUrl.value=URL.createObjectURL(file)
   try {
-    const form=new FormData();form.append('file',file);form.append('mode',photoMode.value)
+    const form=new FormData();form.append('file',file);form.append('mode',photoMode.value);form.append('piece_tone',pieceTone.value)
     if (selected.value) form.append('cad_data', JSON.stringify({
       contour: selected.value.points,
       features: selected.value.features.filter(feature=>feature.classification==='vazador')
@@ -113,7 +126,7 @@ function photograph(): void {
   canvas.getContext('2d')?.drawImage(video.value,0,0)
   canvas.toBlob(blob=>{if(blob) void processPhoto(new File([blob],'captura.png',{type:'image/png'}))},'image/png')
 }
-watch(photoMode, () => { if(lastPhoto.value) void processPhoto(lastPhoto.value) })
+watch([photoMode,pieceTone], () => { if(lastPhoto.value) void processPhoto(lastPhoto.value) })
 watch(selectedId, () => {preview.value=null;lastPhoto.value=null;if(photoUrl.value)URL.revokeObjectURL(photoUrl.value);photoUrl.value='' })
 onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl.value)})
 </script>
@@ -128,7 +141,7 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
       <nav class="workflow" aria-label="Etapas da validação">
         <button type="button" :class="['workflow-step',step===1?'current':'',catalog?'done':'']" :aria-current="step===1?'step':undefined" @click="selectStep(1)"><span>1</span><strong>Importar CAD</strong><small>DXF / HPGL</small></button>
         <button type="button" :disabled="!catalog" :class="['workflow-step',step===2?'current':'']" :aria-current="step===2?'step':undefined" @click="selectStep(2)"><span>2</span><strong>Conferir vazadores</strong><small>Revisar candidatos</small></button>
-        <button type="button" :disabled="!selected" :class="['workflow-step',step===3?'current':'',preview?'done':'']" :aria-current="step===3?'step':undefined" @click="selectStep(3)"><span>3</span><strong>Analisar fotografia</strong><small>Pontos e aberturas</small></button>
+        <button type="button" :disabled="!canAdvance" :class="['workflow-step',step===3?'current':'',preview?'done':'']" :aria-current="step===3?'step':undefined" @click="selectStep(3)"><span>3</span><strong>Analisar fotografia</strong><small>Pontos e aberturas</small></button>
         <div class="workflow-step locked"><span>4</span><strong>Comparar em mm</strong><small>Em desenvolvimento</small></div>
       </nav>
       <section v-if="step===1" class="intro">
@@ -147,7 +160,10 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
           <div class="panel-title"><div><span class="eyebrow">ARQUIVO ATUAL</span><h2>{{ catalog?.filename ?? 'Nenhum CAD importado' }}</h2></div><span class="counter">{{catalog?.count ?? 0}}</span></div>
           <input v-model="search" class="search" type="search" placeholder="Buscar peça ou tamanho..." aria-label="Buscar peça">
           <div class="items">
-            <button v-for="piece in filtered" :key="piece.id" :class="['item',selectedId===piece.id?'active':'']" @click="selectedId=piece.id">
+            <button v-if="(catalog?.pieces.length ?? 0)>1" :class="['item','unknown-option',unknownSize?'active':'']" @click="selectUnknownSize">
+              <span class="piece-id">?</span><span><strong>Não sei a numeração</strong><small>Experimentar sem escolher um tamanho</small></span><b>›</b>
+            </button>
+            <button v-for="piece in filtered" :key="piece.id" :class="['item',selectedId===piece.id && !unknownSize?'active':'']" @click="selectPiece(piece)">
               <span class="piece-id">{{piece.id}}</span><span><strong>{{piece.name}}</strong><small>{{piece.size ? 'Nº '+piece.size+' • ' : ''}}{{piece.features.length}} internos</small></span><b>›</b>
             </button>
             <p v-if="!filtered.length" class="muted">{{ catalog ? 'Nenhuma peça encontrada.' : 'Importe um CAD para começar.' }}</p>
@@ -160,8 +176,8 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
               <svg :viewBox="overviewBox" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Visão geral das peças">
                 <g :transform="flipY(overviewBox)">
                   <g v-for="piece in catalog?.pieces ?? []" :key="piece.id">
-                    <polygon :points="pointsToSvg(piece.points)" :class="['shape',selectedId===piece.id?'selected':'']" @click="selectedId=piece.id"/>
-                    <g v-for="feature in piece.features" :key="feature.id" @click="selectedId=piece.id">
+                    <polygon :points="pointsToSvg(piece.points)" :class="['shape',selectedId===piece.id?'selected':'']" @click="selectPiece(piece)"/>
+                    <g v-for="feature in piece.features" :key="feature.id" @click="selectPiece(piece)">
                       <polygon :points="pointsToSvg(feature.points)" class="feature"/>
                       <circle :cx="feature.center[0]" :cy="feature.center[1]" :r="markerRadius(piece)" class="candidate-marker"/>
                     </g>
@@ -173,6 +189,7 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
           </section>
           <section class="panel">
             <div class="panel-title"><div><span class="eyebrow">ETAPA 2 · CONFERIR GEOMETRIAS INTERNAS</span><h2>{{selected?.name ?? 'Selecione uma peça'}}</h2></div><span class="muted">{{selected?.area_mm2 ?? '—'}} unidades² CAD</span></div>
+            <div v-if="unknownSize" class="review-banner"><strong>Numeração desconhecida</strong><span>O arquivo contém {{catalog?.pieces.length}} moldes. Selecione um para revisar vazadores ou avance para testar só a foto.</span></div>
             <div v-if="selected" class="review-banner">
               <strong>{{selected.features.length}} geometrias internas • {{suggestedHoles}} possíveis vazadores circulares • {{confirmedFeatures}} confirmados</strong>
               <span>{{pendingFeatures ? 'Verifique cada círculo no desenho e confirme sua função.' : 'Classificações revisadas nesta sessão. Ainda sem validação dimensional.'}}</span>
@@ -205,9 +222,9 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
           </section>
         </div>
       </div>
-      <div v-if="step===2 && selected" class="next-step">
-        <div><strong>Próximo passo: testar uma fotografia da peça selecionada</strong>
-        <p>Idealmente, use a peça realmente cortada, plana, sobre fundo uniforme e sem mãos ou marcas desenhadas. O sistema ainda não mede a diferença com o CAD.</p></div>
+      <div v-if="step===2 && canAdvance" class="next-step">
+        <div><strong>Próximo passo: testar uma fotografia {{unknownSize?'sem numeração definida':'do molde selecionado'}}</strong>
+        <p>Sem saber a numeração, o teste mostrará apenas os contornos da foto, sem comparar com um tamanho escolhido ao acaso. Não precisa de régua agora.</p></div>
         <button class="button primary" @click="goToPhoto">Continuar para Etapa 3 →</button>
       </div>
       <section v-if="step===3" class="panel camera" id="etapa-foto">
