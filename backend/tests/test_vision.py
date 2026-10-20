@@ -90,3 +90,35 @@ def test_claro_no_fundo_claro_nao_compara():
     result = analyze_image(image, mode="holes", piece_tone="light")
     assert result["status"] == "capture_invalid"
     assert result["contour"] == []
+
+
+def test_peca_clara_aninhada_em_tecido_azul_e_borda_branca():
+    """Caso das fotos reais reduzidas: piso claro conectado às bordas,
+    tecido azul isolando a peça clara como contorno interno."""
+    image = np.full((300, 525, 3), (243, 243, 243), dtype=np.uint8)
+    cv2.rectangle(image, (25, 0), (495, 299), (140, 85, 55), -1)
+    piece = np.asarray([
+        (140, 75), (220, 40), (334, 66), (360, 145),
+        (332, 207), (208, 205), (125, 165)
+    ], np.int32)
+    cv2.fillPoly(image, [piece], (229, 230, 232))
+    result = analyze_image(image, mode="holes", piece_tone="light")
+    assert result["status"] == "preview_only"
+    assert 18000 <= result["contour_area_px2"] <= 40000
+    assert result["candidate_count"] == 0
+    assert result["micro_candidate_count"] == 0
+    assert any("Fotografia reduzida" in warning for warning in result["warnings"])
+
+
+def test_cor_branca_fora_da_peca_nao_deve_ser_contorno_principal():
+    """Outra orientação: a peça branca interna deve prevalecer sobre a
+    mesa branca que aparece nas margens da imagem."""
+    image = np.full((300, 525, 3), (245, 245, 245), dtype=np.uint8)
+    cv2.rectangle(image, (20, 2), (499, 299), (135, 82, 50), -1)
+    cv2.rectangle(image, (171, 39), (350, 256), (231, 229, 233), -1)
+    result = analyze_image(image, mode="holes", piece_tone="light")
+    assert result["status"] == "preview_only"
+    assert 35000 <= result["contour_area_px2"] <= 41000
+    box = cv2.boundingRect(np.asarray(result["contour"], dtype=np.int32))
+    assert abs(box[0] - 171) < 5
+    assert abs(box[1] - 39) < 5
