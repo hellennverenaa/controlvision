@@ -88,3 +88,22 @@
 .manual-result>span:first-child{color:#69309b;font-weight:750;font-size:12px}
 .manual-result>span{font-size:12px;line-height:1.5;color:#64768c}
 .manual-result>small{font-size:11px;color:#7c8699}
+
+
+/* Pontos de microcontraste em ciano: sinais suspeitos, não furos confirmados. */
+.photo svg .photo-micro-signal{
+  fill:#19b6d01c;
+  stroke:#00a7c7;
+  stroke-width:2.8;
+  stroke-dasharray:5 3;
+  vector-effect:non-scaling-stroke;
+}
+.micro-warning{
+  background:#effbfe;
+  color:#286781;
+  padding:12px;
+  border:1px solid #b9eaf1;
+  border-radius:8px;
+  font-size:12px;
+  line-height:1.5;
+}
