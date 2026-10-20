@@ -52,6 +52,31 @@ def _circular_candidates(contours, outer, outer_area, mode, parents=None, outer_
     return sorted(found, key=lambda item: (item["center"][1], item["center"][0]))[:100]
 
 
+
+
+def _light_piece_mask(image: np.ndarray) -> np.ndarray:
+    """Máscara para peça clara sobre fundo colorido/mais escuro.
+
+    Heurística de protótipo, não segmentador universal. Uma superfície
+    de cor parecida com a peça pode impedir a identificação.
+    """
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    return cv2.inRange(hsv, (0, 0, 135), (179, 90, 255))
+
+
+def _invalid_capture(width, height, regions, reason):
+    return {
+        "status": "capture_invalid", "mode": "holes", "units": "pixels",
+        "contour": [], "contour_area_px2": 0,
+        "image_size": [width, height], "detected_regions": regions,
+        "candidates": [], "candidate_count": 0,
+        "warnings": [
+            reason,
+            "Nenhum vazador nem diferença dimensional foi medido.",
+            "Tente mudar o fundo, a iluminação ou o tom da peça.",
+        ],
+    }
+
 def analyze_image(image: np.ndarray, mode: str = "marks", piece_tone: str = "dark") -> dict:
     """Localiza silhueta e possíveis círculos; não relaciona posição ao CAD."""
     if mode not in {"marks", "holes"}:
@@ -67,10 +92,33 @@ def analyze_image(image: np.ndarray, mode: str = "marks", piece_tone: str = "dar
     smooth = cv2.GaussianBlur(gray, (3, 3), 0)
     polarity = cv2.THRESH_BINARY if mode == "holes" and piece_tone == "light" else cv2.THRESH_BINARY_INV
     _, mask = cv2.threshold(smooth, 0, 255, polarity + cv2.THRESH_OTSU)
+    if mode == "holes" and piece_tone == "light":
+        # Usa cromaticidade: mais robusto para material claro sobre tecido azul.
+        # Não conclui nada sobre furos se a silhueta não for isolada.
+        mask = _light_piece_mask(image)
     contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     if not contours:
+        if mode == "holes":
+            return _invalid_capture(width, height, 0, "Captura inconclusiva: nenhuma silhueta isolada.")
         raise ValueError("Nenhum contorno encontrado: revise luz e fundo.")
-    outer_id = max(range(len(contours)), key=lambda n: cv2.contourArea(contours[n]))
+    if mode == "holes" and piece_tone == "light":
+        # Rejeitar componentes encostados nas bordas, como a mesa e faixas claras.
+        valid_ids = []
+        for index, contour in enumerate(contours):
+            area = cv2.contourArea(contour)
+            x, y, w, h = cv2.boundingRect(contour)
+            if hierarchy is not None and hierarchy[0, index, 3] != -1:
+                continue
+            if x <= 2 or y <= 2 or x + w >= width - 2 or y + h >= height - 2:
+                continue
+            if .025 * width * height <= area <= .80 * width * height:
+                valid_ids.append(index)
+        if not valid_ids:
+            return _invalid_capture(width, height, len(contours),
+                "Captura inconclusiva: não foi possível distinguir a peça clara do fundo.")
+        outer_id = max(valid_ids, key=lambda index: cv2.contourArea(contours[index]))
+    else:
+        outer_id = max(range(len(contours)), key=lambda n: cv2.contourArea(contours[n]))
     outer = contours[outer_id]
     area = cv2.contourArea(outer)
     if area < 50:
@@ -102,7 +150,8 @@ def analyze_image(image: np.ndarray, mode: str = "marks", piece_tone: str = "dar
         parent_ids = hierarchy[0, :, 3].tolist() if hierarchy is not None else []
         candidates = _circular_candidates(contours, outer, area, mode, parent_ids, outer_id)
         advice = ("Aberturas internas são candidatas, não furos validados. "
-                  "A captura exige contraste entre peça e fundo; confira cada ponto.")
+                  "Furinhos menores que poucos pixels podem não ser detectados; "
+                  "zero candidatos NÃO significa zero vazadores.")
     else:
         # Marcas de caneta são componentes escuros, NÃO vazadores físicos.
         candidates = _circular_candidates(contours, outer, area, mode)
