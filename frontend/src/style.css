@@ -107,3 +107,11 @@
   font-size:12px;
   line-height:1.5;
 }
+
+/* Uma textura periódica pode produzir dezenas de candidatos falsos.
+   Não usar cores de aprovação nem marcar a peça como defeituosa. */
+.micro-noise-alert{padding:12px;border:1px solid #e3d5bd;background:#fcfaf6;border-radius:9px;color:#604e38;display:flex;flex-direction:column;gap:8px;font-size:12px}
+.micro-noise-alert strong{color:#5a4328;font-size:13px}
+.micro-noise-alert p{margin:0;line-height:1.5}
+.micro-noise-alert label{cursor:pointer;display:flex;gap:8px;align-items:center}
+.micro-noise-alert input{accent-color:#155cd8}
