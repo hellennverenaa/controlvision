@@ -419,6 +419,12 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
               Imagem reduzida ({{preview.image_size[0]}} × {{preview.image_size[1]}} px): pequenos vazadores podem perder detalhes e não ser detectados. Use a captura original em maior resolução para testar micropontos.
             </p>
             <span><b>{{preview.candidate_count}}</b> candidatos circulares clássicos (amarelo)</span>
+            <div v-if="excessiveCircleCandidates" class="micro-noise-alert">
+              <strong>Quantidade excessiva de candidatos circulares: conferir textura.</strong>
+              <p>Os moldes do CAD possuem {{commonCadCircleCount}} geometrias circulares internas cada,
+                mas a fotografia gerou {{preview.candidate_count}} candidatos.
+                Esse excesso pode incluir a trama do material; não indica quantidade de furos presentes.</p>
+            </div>
             <div v-if="preview.micro_signal_quality==='excesso_de_textura'" class="micro-noise-alert">
               <strong>Detecção instável: excesso de sinais compatível com textura do material.</strong>
               <p>O detector encontrou {{preview.micro_candidate_count}} micropontos, mas a contagem não é confiável para identificar vazadores. Não interprete esse número como quantidade de furos.</p>
