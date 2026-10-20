@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .geometry import read_cad
 from .vision import analyze_image
+from .microholes import inspect_marked_regions
 from .matching import match_visual
 
 app = FastAPI(title="ControlVision", version="0.1.0")
@@ -75,3 +76,28 @@ async def inspect_preview(
         return result
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
+
+
+@app.post("/api/vision/manual-regions")
+async def inspect_manual_regions(
+    file: UploadFile = File(...),
+    marks_json: str = Form(...),
+    piece_tone: str = Form("light"),
+):
+    """Diagnóstico condicionado a anotações humanas. NÃO detecta furos sozinho."""
+    if piece_tone not in ("dark", "light"):
+        raise HTTPException(422, "Tom inválido.")
+    raw = await file.read(15_000_001)
+    if len(raw) > 15_000_000:
+        raise HTTPException(413, "Imagem excede 15 MB.")
+    image = cv2.imdecode(np.frombuffer(raw, dtype=np.uint8), cv2.IMREAD_COLOR)
+    if image is None:
+        raise HTTPException(422, "Imagem inválida.")
+    try:
+        marks = json.loads(marks_json)
+        preview = analyze_image(image, mode="holes", piece_tone=piece_tone)
+        if preview["status"] != "preview_only":
+            raise ValueError("Contorno não isolado. Não é possível analisar marcas.")
+        return inspect_marked_regions(image, preview["contour"], marks)
+    except (ValueError, TypeError, KeyError, IndexError) as exc:
+        raise HTTPException(422, str(exc)[:200]) from exc
