@@ -118,3 +118,10 @@
 
 
 .resolution-warning{background:#fff9e9;border:1px solid #eedab0;padding:12px;border-radius:8px;color:#785920;font-size:12px;line-height:1.5}
+
+/* Diagnóstico de marcações: critério somente de proximidade em pixels. */
+.annotation-compare{display:flex;flex-direction:column;gap:8px;padding:12px;margin:8px 0;border:1px solid #dce5f2;border-radius:9px;background:#fff}
+.annotation-compare>strong{font-size:12px;color:#304b6a}
+.annotation-compare>p{font-size:12px;line-height:1.5;color:#62778f;margin:2px 0}
+.annotation-row{display:flex;flex-wrap:wrap;gap:6px 12px;padding:7px 0;border-bottom:1px solid #edf2f7;font-size:12px;color:#465b73}
+.annotation-row strong{min-width:38px}
