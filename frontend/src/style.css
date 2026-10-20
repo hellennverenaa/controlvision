@@ -56,3 +56,11 @@
 .match-report .note{color:#7d8598;line-height:1.4}
 .match-toggle{display:flex;align-items:flex-start;gap:7px;font-size:12px;color:#3a6295;cursor:pointer}
 .match-toggle input{accent-color:#1766da;margin-top:3px}
+
+/* Experimentação com numeração não informada e captura de peças claras. */
+.unknown-option{border:1px dashed #a7bdde;background:#f7faff;margin-bottom:8px}
+.unknown-option.active{background:#e5f0ff;border-style:solid;border-color:#4e84d5}
+.tone-selector{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;flex-basis:100%;width:100%;padding:9px 0;border-top:1px solid #e5ecf5}
+.tone-selector strong{width:100%;color:#27548b;font-size:12px}
+.tone-selector label{display:flex;align-items:center;gap:6px}
+.capture-invalid{color:#a85124!important}
