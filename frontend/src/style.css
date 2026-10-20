@@ -80,3 +80,11 @@
 .photo .manual-overlay.mark-active{pointer-events:auto;cursor:crosshair}
 .photo svg .manual-mark{pointer-events:none;fill:none;stroke:#9d3dcb;stroke-width:2.5;vector-effect:non-scaling-stroke}
 .photo svg .manual-mark circle{fill:#9d3dcb35}
+
+
+.manual-results{width:100%;flex-basis:100%;background:#fbf8ff;padding:14px;border:1px solid #d8c6f0;border-radius:10px;display:flex;flex-direction:column;gap:9px}
+.manual-results>strong{font-size:13px;color:#6e2aa4}
+.manual-result{padding:10px;border-radius:8px;background:white;display:flex;flex-direction:column;gap:6px;border-left:3px solid #9952c9}
+.manual-result>span:first-child{color:#69309b;font-weight:750;font-size:12px}
+.manual-result>span{font-size:12px;line-height:1.5;color:#64768c}
+.manual-result>small{font-size:11px;color:#7c8699}
