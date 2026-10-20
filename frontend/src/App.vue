@@ -112,7 +112,7 @@ function uploadPhoto(event: Event): void {
 async function startCamera(): Promise<void> {
   error.value=''
   try {
-    stream=await navigator.mediaDevices.getUserMedia({video:true,audio:false})
+    stream=await navigator.mediaDevices.getUserMedia({video:{width:{ideal:1920},height:{ideal:1080},frameRate:{ideal:15}},audio:false})
     cameraOn.value=true
     await nextTick()
     if(video.value) video.value.srcObject=stream
@@ -242,7 +242,7 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
             <label><input v-model="pieceTone" type="radio" value="dark"> Peça escura, fundo claro</label>
             <label><input v-model="pieceTone" type="radio" value="light"> Peça clara, fundo mais escuro</label>
           </div>
-          <p class="note">{{photoMode==='marks'?'Pontos desenhados não são furos físicos.':'Selecione o tom da peça em relação ao fundo. Capturas com contraste insuficiente devem ser consideradas inconclusivas.'}}</p>
+          <p class="note">{{photoMode==='marks'?'Pontos desenhados não são furos físicos.':'Selecione o tom da peça em relação ao fundo. Capturas com contraste insuficiente devem ser consideradas inconclusivas. Para furos minúsculos, aproxime a câmera sem cortar a peça da imagem e evite desfoque; uma foto de baixa resolução pode não resolvê-los.'}}</p>
         </div>
         <div class="actions">
           <label class="button secondary">Enviar fotografia<input type="file" accept="image/*" hidden @change="uploadPhoto"></label>
