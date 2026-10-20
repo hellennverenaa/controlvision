@@ -9,7 +9,38 @@ import cv2
 import numpy as np
 
 
-def inspect_marked_regions(image, outline, marks):
+
+def _neighboring_spot(signal, contour, x, y, radius=11):
+    """Busca um extremo óptico perto de um clique, não classifica furo.
+
+    O extremo pode ser sujeira ou textura. Ignora regiões fora da silhueta e
+    penaliza deslocamentos grandes para não "encontrar" um ponto distante.
+    """
+    height, width = signal.shape
+    x0, y0 = int(round(x)), int(round(y))
+    best = None
+    for py in range(max(0, y0 - radius), min(height, y0 + radius + 1)):
+        for px in range(max(0, x0 - radius), min(width, x0 + radius + 1)):
+            offset = float(np.hypot(px - x, py - y))
+            if offset > radius:
+                continue
+            if cv2.pointPolygonTest(contour, (float(px), float(py)), True) < 3:
+                continue
+            optical_strength = float(signal[py, px])
+            score = optical_strength - 0.30 * offset
+            if best is None or score > best[0]:
+                best = (score, optical_strength, px, py, offset)
+    if best is None or best[1] < 9:
+        return None
+    return {
+        "position_px": [round(float(best[2]), 1), round(float(best[3]), 1)],
+        "offset_px": round(best[4], 1),
+        "optical_signal_levels": round(best[1], 1),
+        "status": "regiao_optica_suspeita_nao_confirmada",
+    }
+
+
+def inspect_marked_regions(image, outline, marks, piece_tone="light"):
     """Analisa contraste de pequenos pontos ASSINALADOS, sem considerar como furos.
 
     Coordenadas estão em pixels na imagem original. Não usa referência CAD,
@@ -17,6 +48,8 @@ def inspect_marked_regions(image, outline, marks):
     """
     if image is None or image.ndim != 3:
         raise ValueError("Imagem inválida.")
+    if piece_tone not in {"light", "dark"}:
+        raise ValueError("Tom da peça inválido.")
     if not isinstance(marks, list) or not 1 <= len(marks) <= 60:
         raise ValueError("Envie entre 1 e 60 marcações.")
     contour = np.asarray(outline, dtype=np.float32)
@@ -25,6 +58,11 @@ def inspect_marked_regions(image, outline, marks):
     h, w = image.shape[:2]
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    # Diferença de suavização separa pequenos sinais da iluminação geral.
+    # Intensidade positiva indica ponto escuro em peça clara ou vice-versa.
+    detail = cv2.GaussianBlur(gray, (3, 3), 0.7).astype(np.float32)
+    background = cv2.GaussianBlur(gray, (17, 17), 3.7).astype(np.float32)
+    signal = (background - detail) if piece_tone == "light" else (detail - background)
     results = []
     # Raio proporcional à resolução; não "aumenta" o detalhe da câmera.
     ring_radius = max(7, min(21, round(min(w, h) * .014)))
@@ -43,6 +81,7 @@ def inspect_marked_regions(image, outline, marks):
             "status": "inconclusivo",
             "gray_contrast": None,
             "saturation_contrast": None,
+            "nearby_signal": None,
             "evidence": "Sem evidência óptica suficiente para confirmar um furo.",
         }
         if edge_distance < 0:
@@ -74,6 +113,9 @@ def inspect_marked_regions(image, outline, marks):
         bg_mad = float(np.median(np.abs(roi_gray[ring_pixels].astype(float) - surround_gray)))
         item["gray_contrast"] = round(gray_contrast, 1)
         item["saturation_contrast"] = round(sat_contrast, 1)
+        # Independente do contraste medido exatamente no clique, buscar
+        # um sinal óptico na vizinhança de até 11 pixels.
+        item["nearby_signal"] = _neighboring_spot(signal, contour, x, y)
 
         # A imagem pode mostrar pigmento, sombra, vazador ou artefato do sensor.
         # Não interpretamos a natureza física, apenas reportamos contraste.
@@ -99,7 +141,8 @@ def inspect_marked_regions(image, outline, marks):
         "units": "pixels_nao_calibrados",
         "results": results,
         "warnings": [
-            "Marcações foram inseridas por uma pessoa, não detectadas automaticamente.",
+            "Marcações e busca de sinais próximos são assistidas, não detecção automática.",
+            "A busca local pode selecionar fibras, pigmentos ou ruídos; não confirma vazadores.",
             "Contraste local não demonstra que há um furo passante.",
             "Sem correspondência CAD, escala métrica ou aprovação de qualidade.",
         ],
