@@ -59,3 +59,20 @@ def test_sem_candidatos_na_imagem():
 def test_contornos_invalidos_nao_passam():
     with pytest.raises(ValueError):
         match_visual([[0, 0]], CAD, [], [])
+
+
+def test_percentual_diferenca_forma_nao_e_erro_dimensional():
+    # Normalização ilustrativa elimina escala: o índice não detecta aumento homogêneo.
+    image_contour = [camera_projection(p, 17) for p in CAD]
+    result = match_visual(CAD, image_contour, FEATURES, [])
+    assert result["visual_shape_difference_percent"] is not None
+    assert result["visual_shape_difference_percent"] < 2.5
+    assert result["units"] == "pixels_nao_calibrados"
+    assert "mm" not in result
+
+
+def test_percentual_nao_e_reportado_em_alinhamento_ruim():
+    image_contour = [[0,0], [700,0], [700,10], [0,10]]
+    result = match_visual(CAD, image_contour, FEATURES, [])
+    assert result["fit_quality"] == "baixa"
+    assert result["visual_shape_difference_percent"] is None
