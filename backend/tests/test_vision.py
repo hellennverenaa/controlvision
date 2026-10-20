@@ -68,3 +68,25 @@ def test_fundo_confundido_com_peca_bloqueia_vazadores():
 def test_tom_invalido():
     with pytest.raises(ValueError):
         analyze_image(np.zeros((100, 100, 3), dtype=np.uint8), mode="holes", piece_tone="alien")
+
+
+def test_peca_clara_em_fundo_azul_segmenta_silhueta_sem_inventar_furos():
+    # Cores geradas sinteticamente: branco com contraste de cromaticidade azul.
+    image = np.zeros((335, 447, 3), dtype=np.uint8)
+    image[:] = [128, 88, 65]  # fundo azul em BGR
+    poly = np.array([[126, 90], [166, 65], [305, 56], [354, 81],
+                     [351, 173], [357, 211], [316, 231], [259, 220],
+                     [139, 178], [125, 154]], dtype=np.int32)
+    cv2.fillPoly(image, [poly], (200, 205, 211))
+    result = analyze_image(image, mode="holes", piece_tone="light")
+    assert result["status"] == "preview_only"
+    assert len(result["contour"]) >= 3
+    assert result["candidate_count"] == 0
+    assert "NÃO" in result["warnings"][0] or "zero" in result["warnings"][0]
+
+
+def test_claro_no_fundo_claro_nao_compara():
+    image = np.full((340, 440, 3), 245, dtype=np.uint8)
+    result = analyze_image(image, mode="holes", piece_tone="light")
+    assert result["status"] == "capture_invalid"
+    assert result["contour"] == []
