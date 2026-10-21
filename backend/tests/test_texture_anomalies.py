@@ -64,3 +64,12 @@ def test_centro_fora_da_peca_nao_gera_deteccao():
     result = inspect_irregular_signal(photo, mask, [510, 45])
     assert result["status"] == "inconclusivo"
     assert result["distinct_band_count"] == 0
+
+
+def test_centro_fracionario_junto_ao_limite_nao_gera_index_error():
+    photo, mask, _ = make_mesh()
+    result = inspect_irregular_signal(
+        photo, mask, [photo.shape[1] - 0.1, photo.shape[0] - 0.1]
+    )
+    assert result["status"] == "inconclusivo"
+    assert not result["bands"]
