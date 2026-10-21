@@ -480,11 +480,90 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
           <button class="button secondary" type="button" :aria-pressed="annotatePhoto" @click="annotatePhoto=!annotatePhoto">
             {{annotatePhoto?'Encerrar marcação manual':'Marcar furinhos manualmente'}}
           </button>
-          <button v-if="manualMarks.length" class="button secondary" type="button" @click="manualMarks.pop();manualReport=null">Desfazer último ponto</button>
-          <button v-if="manualMarks.length" class="button secondary" type="button" @click="manualMarks=[];manualReport=null">Limpar marcações</button>
+          <button v-if="manualMarks.length" class="button secondary" type="button" @click="undoLastManualMark">Desfazer último ponto</button>
+          <button v-if="manualMarks.length" class="button secondary" type="button" @click="clearManualMarks">Limpar marcações</button>
           <button v-if="manualMarks.length && photoMode==='holes'" class="button primary" type="button" :disabled="manualBusy"
             @click="evaluateManualMarks">{{manualBusy?'Analisando…':'Analisar regiões marcadas'}}</button>
           <p class="note">Ampliação não cria detalhes na imagem. Os pontos roxos são anotações humanas. A análise procura contraste apenas ao redor desses pontos e <strong>não é detecção automática nem confirmação de furo.</strong></p>
+          <section v-if="photoMode==='holes'" class="reference-validation" aria-label="Modo de validação experimental">
+            <label class="reference-title">
+              <input type="checkbox" v-model="validationMode" @change="manualReport=null">
+              <strong>Modo de validação dos vazadores (laboratório)</strong>
+            </label>
+            <template v-if="validationMode">
+              <p class="note">Marque os vazadores reais na imagem em roxo e confirme individualmente
+                quais estão <strong>fisicamente abertos</strong>. Isso registra uma referência humana,
+                não transforma marcação em detecção automática.</p>
+              <p v-if="!manualMarks.length" class="note">
+                Use <strong>Marcar furinhos manualmente</strong> acima e clique sobre cada furo na fotografia.
+              </p>
+              <div v-for="point in manualMarks" :key="point.id" class="validation-mark">
+                <span><b>{{point.id}}</b> · ({{point.x}}, {{point.y}}) px</span>
+                <label>
+                  <input type="checkbox" :checked="physicallyConfirmedMarkIds.includes(point.id)"
+                    @change="togglePhysicalConfirmation(point.id, ($event.target as HTMLInputElement).checked)">
+                  Confirmo a existência física deste vazador
+                </label>
+              </div>
+              <p class="note">Confirmados: {{physicallyConfirmedMarkIds.length}} de
+                {{manualMarks.length}} pontos marcados. A localização é uma anotação humana aproximada.
+                Só os confirmados entram na taxa experimental de recuperação.</p>
+            </template>
+          </section>
+          <section v-if="validationMode && manualReport?.reference_validation" class="reference-validation-results"
+            aria-label="Resultado da validação dos vazadores">
+            <strong>Validação experimental — referências físicas declaradas</strong>
+            <template v-if="manualReport.reference_validation.reference_count">
+              <p><b>{{manualReport.reference_validation.automatically_matched}}</b> de
+                <b>{{manualReport.reference_validation.reference_count}}</b> vazadores físicos anotados
+                possuem um candidato automático próximo.</p>
+              <p><b>{{manualReport.reference_validation.not_detected_near_reference}}</b> referência(s)
+                sem detecção automática associada. Isso indica possíveis falhas do detector,
+                não prova ausência de furo.</p>
+              <p>Recuperação experimental nesta fotografia:
+                <b>{{manualReport.reference_validation.reference_recovery_percent}}%</b>
+                (distância de associação: {{manualReport.reference_validation.association_radius_px}} px;
+                NÃO é precisão industrial).</p>
+              <p><b>{{manualReport.reference_validation.unreviewed_candidate_count}}</b> candidato(s)
+                automáticos não associados às referências confirmadas: <strong>não revisados</strong>,
+                e não necessariamente falsos positivos.</p>
+              <div v-for="item in manualReport.reference_validation.references" :key="item.mark_id" class="reference-row">
+                <b>{{item.mark_id}}</b>
+                <span v-if="item.candidate_id">
+                  Encontrado próximo: {{item.candidate_id}} ({{item.candidate_type}}),
+                  a {{item.distance_px}} px. Não confirma automaticamente o furo.
+                </span>
+                <span v-else>Sem candidato automático próximo nesta captura — possível falso negativo do detector.</span>
+              </div>
+              <button class="button secondary" type="button" @click="saveValidationSnapshot">
+                Registrar resultado desta fotografia na sessão
+              </button>
+            </template>
+            <p v-else>Sem vazadores com existência física confirmada. Confirme pelo menos um ponto
+              acima e execute novamente <strong>Analisar regiões marcadas</strong>.</p>
+            <p class="note">Dados temporários da sessão. Não identificam numeração, não calculam
+              desvios em milímetros e não autorizam uso em produção.</p>
+          </section>
+          <section v-if="validationMode && validationHistory.length" class="reference-validation-history">
+            <strong>Comparação entre fotografias nesta sessão</strong>
+            <p class="note">Cada linha é um ensaio independente da mesma referência física.
+              Uma fotografia nova exige novas marcações e confirmações. Registros da mesma
+              fotografia são substituídos ao serem salvos novamente.</p>
+            <div class="history-table-wrap">
+              <table>
+                <thead><tr><th>Fotografia</th><th>Confirmados</th><th>Próximos</th><th>Sem detecção</th>
+                  <th>Taxa experimental</th><th>Extras não revisados</th></tr></thead>
+                <tbody>
+                  <tr v-for="sample in validationHistory" :key="sample.photoSerial">
+                    <td>{{sample.label}}</td><td>{{sample.verified}}</td><td>{{sample.found}}</td>
+                    <td>{{sample.missed}}</td><td>{{sample.recovery===null?'—':sample.recovery+'%'}}</td>
+                    <td>{{sample.unreviewed}}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <button class="button secondary" type="button" @click="clearValidationHistory">Limpar histórico da sessão</button>
+          </section>
           <section v-if="manualReport" class="manual-results" aria-label="Resultados da análise assistida">
             <strong>Análise assistida por marcações — pixels, sem conclusão dimensional</strong>
             <p class="note">Pontos com contraste podem ser furos, sombras ou textura. Pontos inconclusivos não significam furos ausentes.</p>
