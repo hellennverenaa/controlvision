@@ -277,6 +277,19 @@ O fator de escala ilustrativo permanece **fixo** durante o refinamento; a proje�
 
 **Ainda não se pode usar a sobreposição para aprovar/reprovar peças.** O próximo teste deve verificar se o azul tracejado segue o vermelho após o refinamento e se as distâncias entre centros CAD e três marcas humanas caíram, permaneceram ou aumentaram. Não aceitar nenhuma melhoria fictícia apenas porque o software passou a associar três pontos.
 
+## Refinamento visual e inspeção de V02 (21/10/2026)
+
+Após refinamento rígido **somente por contorno externo**, a diferença visual normalizada caiu de cerca de 9,1% para **1,6%**, sem alteração adicional de escala. Na fotografia experimental, as três marcas humanas passaram a ficar a **0,4 / 2,6 / 0,6 pixels** dos centros CAD projetados, contra dezenas de pixels antes. Esses valores são **distâncias de tela em pixels**, não medidas de corte e não comprovam que os círculos CAD correspondam a furos físicos.
+
+O detector guiado apresentou:
+- V01: 80 níveis, limiar 68,1 → sinal suspeito.
+- V03: 99 níveis, limiar 97,8 → sinal suspeito, diferença de somente 1,2 nível.
+- V02: 60 níveis, limiar 76,5 → inconclusivo, falta de 16,5 níveis para o filtro atual.
+
+Para diagnosticar V02 sem diminuir a sensibilidade geral, cada ROI CAD agora registra o **pixel de maior contraste bruto, sua distância ao centro previsto, contraste medido exatamente no centro CAD e margem em relação ao limiar**. O pico bruto pode ser trama ou sombra; não vira candidato nem aumenta a contagem detectada. A análise não altera a detecção global independente, nem restringe a busca de defeitos extras.
+
+É preciso repetir o teste com a mesma fotografia e observar onde cai o pico bruto de V02. A resolução, o padrão da malha e a iluminação continuam limitando a capacidade de distinguir um furo real de microaberturas têxteis.
+
 ## Limites conhecidos
 
 - Nenhuma aprovação/reprovação automática de produção.
