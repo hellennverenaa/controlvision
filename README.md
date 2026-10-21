@@ -219,6 +219,14 @@ Confira primeiro se o contorno azul realmente acompanha o vermelho. Se não acom
 
 A transformação utiliza escala **normalizada para visualização**, rotação e translação. Não representa medição dimensional e **não escolhe automaticamente a numeração**. Esta mudança melhora o diagnóstico da sobreposição, mas não declara o detector de vazadores validado.
 
+## Verificação visual com a peça em três orientações (21/10/2026)
+
+Foram observadas três capturas da peça real com overlays vermelhos (contorno da fotografia), azuis (contorno e centros projetados do CAD) e amarelos (candidatos do detector convencional). A silhueta CAD acompanha aproximadamente a fotografia nas três posições, com desvios locais visíveis, mas os candidatos amarelos continuam frequentemente concentrados em grupos que se parecem com a textura do tecido.
+
+Para facilitar a validação, quando o número de candidatos circulares supera fortemente os círculos presentes por peça no arquivo CAD, a interface **oculta os pontos amarelos inicialmente** e oferece um checkbox para exibi-los sem perdê-los. Assim, o operador pode comparar primeiro os dois contornos e depois examinar as suspeitas ópticas.
+
+A prévia da família também apresenta o **percentual de área de divergência entre as silhuetas normalizadas pela escala de exibição**. Esse é um índice **não metrológico**, que não mostra erro dimensional, não resolve a numeração da peça e pode mascarar diferenças de escala; a peça nunca deve ser aprovada com base nesse percentual. Quando o ajuste é ruim, o percentual permanece indisponível.
+
 ## Limites conhecidos
 
 - Nenhuma aprovação/reprovação automática de produção.
