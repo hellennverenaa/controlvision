@@ -185,3 +185,17 @@
 .reference-validation-history table{width:100%;border-collapse:collapse;font-size:12px;text-align:left}
 .reference-validation-history td,.reference-validation-history th{border-bottom:1px solid #e1eaf3;padding:9px;white-space:nowrap}
 .reference-validation-history th{color:#365675;font-weight:700}
+
+/* Estudo de descontinuidades de trama sem forma circular: sem indicador
+   de aprovação, taxa de acerto ou furo fisicamente confirmado. */
+.irregular-summary{display:flex;flex-direction:column;gap:10px;
+  padding:12px;margin:9px 0;border:1px solid #cad9e9;border-radius:8px;background:#f8fbfd}
+.irregular-summary>strong{font-size:12px;color:#244f76}
+.irregular-summary>p{font-size:12px;color:#526d82;line-height:1.5;margin:0}
+.irregular-result{display:flex;flex-direction:column;gap:6px;
+  background:white;border:1px solid #e0e8f2;padding:10px;border-radius:8px;
+  font-size:12px;color:#4c627e}
+.irregular-result>b{color:#24547d}
+.irregular-bands{display:flex;flex-wrap:wrap;gap:8px}
+.irregular-bands>span{font-size:11px;border:1px solid #dee6ee;border-radius:6px;
+  padding:5px;background:#f6f8fb;color:#50667d}
