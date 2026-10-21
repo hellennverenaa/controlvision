@@ -26,7 +26,12 @@ type GuidedRegion = { cad_id: string; position_px: number[]; roi_radius_px: numb
   max_local_signal_levels?: number|null; threshold_levels?: number|null;
   noise_sigma_levels?: number|null; raw_peak_px?: number[]|null;
   raw_peak_distance_px?: number|null; contrast_margin_levels?: number|null;
-  signal_at_cad_center_levels?: number|null }
+  signal_at_cad_center_levels?: number|null;
+  texture_window_radius_px?: number; texture_reference_window_count?: number;
+  texture_reference_median_levels?: number|null; texture_reference_p90_levels?: number|null;
+  texture_target_peak_levels?: number|null; texture_peak_percentile?: number|null;
+  texture_peak_excess_p90_levels?: number|null;
+  texture_distinctiveness?: 'comparacao_indisponivel'|'sem_destaque_frente_a_trama'|'contraste_incomum_na_regiao' }
 type RegistrationRefinement = { method: string; translation_px: number[]; translation_magnitude_px: number;
   rotation_adjustment_deg: number; initial_chamfer_px: number; refined_chamfer_px: number; scale_changed_during_refinement: boolean }
 type FamilyProfile = { piece_id: string; size: string; cad_circle_count: number; fit_quality: string;
@@ -618,6 +623,27 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
                       Sinal exatamente no centro CAD: {{region.signal_at_cad_center_levels}} níveis.
                       <strong>O pico bruto pode ser apenas textura. Não é furo detectado.</strong>
                     </small>
+                    <div v-if="region.texture_reference_window_count && region.texture_reference_window_count>=30"
+                         class="texture-compare">
+                      <strong>Comparação com a trama próxima — diagnóstico experimental</strong>
+                      <span>{{region.texture_reference_window_count}} regiões de controle ·
+                        contraste máximo em {{region.texture_window_radius_px}} px do centro CAD:
+                        {{region.texture_target_peak_levels}} níveis.</span>
+                      <span>Nas regiões de controle: mediana {{region.texture_reference_median_levels}} ·
+                        90º percentil {{region.texture_reference_p90_levels}} níveis.</span>
+                      <span>Diferença do pico esperado para o 90º percentil da trama:
+                        {{region.texture_peak_excess_p90_levels}} níveis.</span>
+                      <span v-if="region.texture_distinctiveness==='contraste_incomum_na_regiao'">
+                        O contraste local se destaca da trama vizinha. <strong>Isso NÃO confirma furo.</strong>
+                      </span>
+                      <span v-else>
+                        O contraste não se destaca suficientemente da trama vizinha.
+                        <strong>Isso NÃO confirma ausência de vazador.</strong>
+                      </span>
+                      <small>O percentil observado ({{region.texture_peak_percentile}}%) mede apenas
+                        como este pico se compara a regiões vizinhas da malha,
+                        NÃO é probabilidade de acerto ou confiança industrial.</small>
+                    </div>
                   </div>
                   <div v-if="cadVsManual" class="manual-cad-review">
                     <strong>Conferência humana: alinhamento CAD × detecção óptica</strong>
