@@ -20,7 +20,7 @@ type ManualReport = { status: 'manual_guided_preview'; results: ManualRegion[]; 
 type MatchedPoint = { cad_id: string; image_id: string; expected_px: number[]; detected_px: number[] }
 type MatchPreview = { status: 'preview_only'; fit_quality: string; shape_error_relative: number; visual_shape_difference_percent: number|null; projected_contour: number[][]; matched: MatchedPoint[]; unmatched_cad: {cad_id:string;position_px:number[]}[]; unmatched_image: {image_id:string;position_px:number[]}[]; warnings: string[] }
 type FamilyProfile = { piece_id: string; size: string; cad_circle_count: number; fit_quality: string;
-  shape_error_relative: number; nearby_candidates: number;
+  shape_error_relative: number; nearby_candidates: number; projected_contour: number[][];
   projected_circles: { cad_id: string; nearest_candidate_id: string|null; position_px: number[] }[] }
 type FamilyMatching = { status: string; tested_references: number; profiles: FamilyProfile[]; warnings: string[] }
 type Preview = { status: string; contour: number[][]; image_size: number[]; detected_regions: number; mode: 'marks'|'holes'; candidates: PhotoCandidate[]; candidate_count: number; micro_candidates?: MicroSignal[]; micro_candidate_count?: number; micro_signal_quality?: string; micro_signals_per_10000_px2?: number; warnings: string[]; matching?: MatchPreview|null; family_matching?: FamilyMatching|null }
@@ -399,6 +399,10 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
               </g>
               <g v-if="showFamilyPattern && selectedFamilyProfile && selectedFamilyProfile.fit_quality!=='baixa'"
                 class="family-projected-points">
+                <polygon :points="pointsToSvg(selectedFamilyProfile.projected_contour)"
+                  class="cad-illustrative-outline">
+                  <title>Contorno azul tracejado: projeção ilustrativa CAD, não medida dimensional.</title>
+                </polygon>
                 <g v-for="expected in selectedFamilyProfile.projected_circles" :key="expected.cad_id">
                   <circle :cx="expected.position_px[0]" :cy="expected.position_px[1]" r="12"
                     class="family-expected-ring">
@@ -490,10 +494,15 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
                   </select>
                 </label>
                 <label class="match-toggle">
-                  <input v-model="showFamilyPattern" type="checkbox"> Mostrar em azul os três centros CAD previstos (apenas projeção ilustrativa)
+                  <input v-model="showFamilyPattern" type="checkbox"> Mostrar contorno e centros CAD em azul tracejado (apenas projeção ilustrativa)
                 </label>
                 <span v-if="selectedFamilyProfile"><b>{{selectedFamilyProfile.nearby_candidates}}</b> de
                   {{selectedFamilyProfile.cad_circle_count}} geometrias circulares com algum candidato próximo, nesta referência experimental.</span>
+                <p v-if="selectedFamilyProfile" class="note">
+                  Qualidade do ajuste do contorno: <strong>{{selectedFamilyProfile.fit_quality}}</strong>.
+                  Compare primeiro o azul tracejado com a borda vermelha. Só depois interprete os centros azuis.
+                  Um alinhamento aparentemente bom não comprova vazadores nem dimensões.
+                </p>
                 <p class="note">Os nove tamanhos podem ser indistinguíveis sem escala métrica. Um encaixe aparente não identifica a numeração nem confirma os furos.</p>
               </template>
             </div>
