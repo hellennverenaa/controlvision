@@ -139,3 +139,18 @@ def test_trama_regular_nao_e_automaticamente_vazador():
     assert out["texture_reference_window_count"] >= 30
     assert out["texture_distinctiveness"] == "sem_destaque_frente_a_trama"
     assert out["status"] != "furo_confirmado"
+
+
+def test_guiado_cad_inclui_diagnostico_sem_alterar_contagem_de_picos():
+    img, poly = scene()
+    center = positions()[1]["position_px"]
+    cv2.line(img, (294, 268), (305, 271), (30, 30, 30), 2)
+    out = analyze_predicted_regions(img, poly, positions())
+    assert len(out) == 3
+    for item in out:
+        investigation = item["irregular_texture"]
+        assert investigation["method"] == "morfologia_multiescala"
+        assert investigation["status"] in ("sem_destaque", "sinal_incomum", "inconclusivo")
+        assert "furo_confirmado" not in str(investigation)
+        assert "candidate_count" not in investigation
+    assert out[1]["irregular_texture"]["status"] == "sinal_incomum"
