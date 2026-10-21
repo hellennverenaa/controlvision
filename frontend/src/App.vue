@@ -72,17 +72,47 @@ const cadVsManual = computed(() => {
     mapping,
   }))
   const best=options.reduce((x,y)=>y.cost<x.cost?y:x)
-  const pairs=best.mapping.map((ci,mi)=>({
-    mark_id:marks[mi].id,
-    cad_id:centers[ci].cad_id,
-    distance_px:Math.round(Math.hypot(marks[mi].x-centers[ci].position_px[0],
-                                       marks[mi].y-centers[ci].position_px[1])*10)/10,
-    roi_radius_px:selectedFamilyProfile.value?.guided_regions?.find(r=>r.cad_id===centers[ci].cad_id)?.roi_radius_px ?? null,
-  }))
+  const detected=[
+    ...(preview.value?.candidates ?? []),
+    ...(preview.value?.micro_candidates ?? []),
+  ]
+  const pairs=best.mapping.map((ci,mi)=>{
+    const cadId=centers[ci].cad_id
+    const guided=selectedFamilyProfile.value?.guided_regions?.find(r=>r.cad_id===cadId)
+    const distance=Math.hypot(
+      marks[mi].x-centers[ci].position_px[0],
+      marks[mi].y-centers[ci].position_px[1],
+    )
+    const nearest=detected.map(candidate=>({
+      id:candidate.id,
+      distance:Math.hypot(marks[mi].x-candidate.center[0],marks[mi].y-candidate.center[1]),
+    })).sort((x,y)=>x.distance-y.distance)[0] ?? null
+    const outside=guided && distance>guided.roi_radius_px
+    const belowThreshold=guided?.optical_peaks===0 &&
+      guided?.max_local_signal_levels!=null && guided?.threshold_levels!=null &&
+      guided.max_local_signal_levels < guided.threshold_levels
+    let reason='Comparar o sinal na foto, o centro CAD e a região de busca.'
+    if(outside) reason='O centro CAD projetado está fora da região que abrange o ponto marcado: revisar alinhamento ou referência.'
+    else if(belowThreshold) reason='O ponto marcado está dentro da região CAD, mas o contraste não superou o filtro local.'
+    return {
+      mark_id:marks[mi].id,
+      cad_id:cadId,
+      distance_px:Math.round(distance*10)/10,
+      roi_radius_px:guided?.roi_radius_px ?? null,
+      nearest_photo_candidate_id:nearest?.id ?? null,
+      nearest_photo_distance_px:nearest?Math.round(nearest.distance*10)/10:null,
+      nearby_photo_candidate:!!nearest && nearest.distance<=12,
+      diagnosis:reason,
+      outside_roi:!!outside,
+      below_threshold:!outside && !!belowThreshold,
+    }
+  })
   return {
     pairs,
     maximum_px:Math.max(...pairs.map(p=>p.distance_px)),
-    outside_roi:pairs.filter(p=>p.roi_radius_px!==null && p.distance_px>p.roi_radius_px!).length,
+    outside_roi:pairs.filter(p=>p.outside_roi).length,
+    nearby_photo:pairs.filter(p=>p.nearby_photo_candidate).length,
+    inside_below_threshold:pairs.filter(p=>p.below_threshold).length,
   }
 })
 const manualReport = ref<ManualReport|null>(null)
@@ -569,19 +599,27 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
                     </small>
                   </div>
                   <div v-if="cadVsManual" class="manual-cad-review">
-                    <strong>Conferência humana dos três centros CAD (sem escala física)</strong>
-                    <p>Máxima diferença: {{cadVsManual.maximum_px}} px.
-                      {{cadVsManual.outside_roi}} de 3 marcações ficaram além do raio de investigação CAD.
-                      Isso pode indicar projeção incorreta ou ponto marcado fora do centro; NÃO é erro da peça.</p>
-                    <p v-for="item in cadVsManual.pairs" :key="item.mark_id">
-                      {{item.mark_id}} → {{item.cad_id}}:
-                      {{item.distance_px}} px
-                      <template v-if="item.roi_radius_px!==null">
-                        (busca: {{item.roi_radius_px}} px)
-                      </template>
-                    </p>
-                    <p class="note">Pareamento visual um-para-um dos três cliques com os três centros projetados.
-                      Não identifica numeração, não mede nem confirma furos.</p>
+                    <strong>Conferência humana: alinhamento CAD × detecção óptica</strong>
+                    <p>{{cadVsManual.nearby_photo}} de 3 marcações com algum candidato automático até 12 px.
+                      {{cadVsManual.outside_roi}} de 3 fora da região CAD projetada.
+                      {{cadVsManual.inside_below_threshold}} dentro da região, mas abaixo do limiar do filtro.</p>
+                    <p>Máxima distância entre marcação humana e centro CAD: {{cadVsManual.maximum_px}} px.
+                      Essas diferenças NÃO são erros dimensionais da peça.</p>
+                    <div v-for="item in cadVsManual.pairs" :key="item.mark_id" class="manual-cad-row">
+                      <b>{{item.mark_id}} → {{item.cad_id}}</b>
+                      <span>Centro CAD a {{item.distance_px}} px
+                        <template v-if="item.roi_radius_px!==null">(região de investigação: {{item.roi_radius_px}} px)</template>.
+                      </span>
+                      <span v-if="item.nearest_photo_candidate_id">
+                        Candidato automático mais próximo: {{item.nearest_photo_candidate_id}}
+                        a {{item.nearest_photo_distance_px}} px
+                        — {{item.nearby_photo_candidate?'próximo da anotação':'longe da anotação'}}.
+                      </span>
+                      <span v-else>Nenhum candidato automático disponível para comparação.</span>
+                      <span class="manual-cad-diagnosis">{{item.diagnosis}}</span>
+                    </div>
+                    <p class="note">Os pontos roxos são anotações humanas. Proximidade óptica não comprova furo físico.
+                      O alinhamento usa normalização visual de escala; não identifica numeração ou conformidade.</p>
                   </div>
                   <p v-else class="note">Para investigar se os centros CAD ficaram deslocados, marque os três
                     furinhos visíveis em roxo: a distância de cada clique ao centro azul será mostrada aqui.
