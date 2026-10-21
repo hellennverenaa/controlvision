@@ -312,6 +312,23 @@ Na anotação M03 o candidato I01 ficou a **12,5 px** do clique: apenas **0,5 px
 
 A fotografia original correspondente foi examinada em sua resolução de 960 × 1280 px. O contraste cromático azul/branco no entorno dos centros não mostrou separação consistente suficiente para justificar um novo detector de cor nesta captura. A trava de resultados inconclusivos permanece: não ajustar a sensibilidade global apenas para encontrar exatamente três supostos vazadores. Antes de validação industrial, exigir rótulos físicos confiáveis e condições de iluminação mais reprodutíveis.
 
+## Modo de Validação de Vazadores — Etapa 3 (protótipo)
+
+Na fotografia de uma **peça real**, marque os furos com o botão **Marcar furinhos manualmente**. Habilite o **Modo de validação dos vazadores (laboratório)** e, após inspecionar fisicamente a peça, confirme individualmente os pontos em que o vazador realmente existe. Essas declarações são referências humanas aproximadas e **não entram no detector automático**. A numeração pode permanecer desconhecida.
+
+Clique **Analisar regiões marcadas**. O resultado experimental apresenta, apenas para os furos físicos confirmados pelo operador:
+
+- Quantos pontos têm **um candidato automático real a até 12 pixels**, com associação um-para-um.
+- Quantos estão **sem candidato associado** (possível falha do detector, **não** ausência de furo).
+- A **taxa de recuperação deste conjunto de pontos físicos marcados**: encontrados / confirmados × 100. Isso **não é** percentual de qualidade da peça, precisão industrial nem medida dimensional.
+- Quantos candidatos automáticos permanecem **não revisados**. Eles não são contados como falsos positivos automaticamente, pois a fotografia pode conter furos adicionais não marcados.
+
+O modo **nunca conta pontos roxos, cliques manuais ou picos exploratórios da busca guiada por CAD como detecções automáticas**. Sem confirmações físicas, não calcula taxa. Um candidato não pode ser contabilizado em duas referências.
+
+Para comparar orientações, clique **Registrar resultado desta fotografia na sessão** depois da análise. Envie a próxima fotografia da **mesma peça física** e repita as marcações e confirmações: uma tabela exibirá os ensaios lado a lado. Análises repetidas do mesmo arquivo substituem a linha anterior. Os registros existem **somente na memória da página**: ao recarregar, mudar de modelo ou encerrar a sessão, não há persistência. Não inclui fotos nem dados sensíveis no repositório. O módulo não está conectado a PostgreSQL/infraestrutura corporativa nesta fase.
+
+Este modo é **assistido pelo operador e experimental**. Os testes demonstram associação em pixels, não homologia geométrica medida. Não identifica tamanho nem fornece erro em milímetros, e não aprova/reprova nenhuma peça de produção. A associação de 12 px é apenas um critério exploratório, que pode variar de efeito conforme resolução/ângulo/câmera: resultados entre fotografias só podem ser interpretados com essas diferenças em mente.
+
 ## Limites conhecidos
 
 - Nenhuma aprovação/reprovação automática de produção.
