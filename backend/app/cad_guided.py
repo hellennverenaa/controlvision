@@ -83,6 +83,8 @@ def analyze_predicted_regions(image, photo_contour, centers, piece_tone="light")
             "texture_reference_p90_levels": None,
             "texture_target_peak_levels": None,
             "texture_peak_percentile": None,
+            "texture_peak_excess_p90_levels": None,
+            "texture_distinctiveness": "comparacao_indisponivel",
             "message": "Região inconclusiva; ausência de sinal não significa vazador ausente.",
         }
         if not (0 <= x < w and 0 <= y < h):
@@ -115,6 +117,15 @@ def analyze_predicted_regions(image, photo_contour, centers, piece_tone="light")
                 result["texture_target_peak_levels"] = round(target, 1)
                 result["texture_peak_percentile"] = round(
                     float(np.mean(controls <= target) * 100), 1
+                )
+                difference = target - float(np.percentile(controls, 90))
+                result["texture_peak_excess_p90_levels"] = round(
+                    difference, 1
+                )
+                result["texture_distinctiveness"] = (
+                    "contraste_incomum_na_regiao"
+                    if target >= 18. and difference > 10.
+                    else "sem_destaque_frente_a_trama"
                 )
         x0, x1 = max(0, int(x) - radius), min(w, int(x) + radius + 1)
         y0, y1 = max(0, int(y) - radius), min(h, int(y) + radius + 1)
