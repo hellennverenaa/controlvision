@@ -31,6 +31,13 @@ type ManualReport = { status: 'manual_guided_preview'; results: ManualRegion[];
   annotation_comparison?: AnnotationComparison; reference_validation?: ReferenceValidation; warnings: string[] }
 type MatchedPoint = { cad_id: string; image_id: string; expected_px: number[]; detected_px: number[] }
 type MatchPreview = { status: 'preview_only'; fit_quality: string; shape_error_relative: number; visual_shape_difference_percent: number|null; projected_contour: number[][]; matched: MatchedPoint[]; unmatched_cad: {cad_id:string;position_px:number[]}[]; unmatched_image: {image_id:string;position_px:number[]}[]; warnings: string[] }
+type IrregularBand = { kernel_px: number; roi_peak_levels: number; texture_p95_levels: number;
+  margin_levels: number; reference_count: number; peak_px: number[]; peak_distance_px: number;
+  unusual_contrast: boolean }
+type IrregularSignal = { status: 'sinal_incomum'|'sem_destaque'|'inconclusivo';
+  method: string; cad_center_px: number[]; analysis_radius_px: number;
+  bands: IrregularBand[]; distinct_band_count: number; best_peak_px: number[]|null;
+  best_peak_distance_px: number|null; message: string }
 type GuidedRegion = { cad_id: string; position_px: number[]; roi_radius_px: number;
   status: 'sinal_suspeito'|'textura_ambigua'|'inconclusivo'; optical_peaks: number;
   best_signal_px: number[]|null; best_signal_levels: number|null;
@@ -43,7 +50,8 @@ type GuidedRegion = { cad_id: string; position_px: number[]; roi_radius_px: numb
   texture_reference_median_levels?: number|null; texture_reference_p90_levels?: number|null;
   texture_target_peak_levels?: number|null; texture_peak_percentile?: number|null;
   texture_peak_excess_p90_levels?: number|null;
-  texture_distinctiveness?: 'comparacao_indisponivel'|'sem_destaque_frente_a_trama'|'contraste_incomum_na_regiao' }
+  texture_distinctiveness?: 'comparacao_indisponivel'|'sem_destaque_frente_a_trama'|'contraste_incomum_na_regiao';
+  irregular_texture?: IrregularSignal|null }
 type RegistrationRefinement = { method: string; translation_px: number[]; translation_magnitude_px: number;
   rotation_adjustment_deg: number; initial_chamfer_px: number; refined_chamfer_px: number; scale_changed_during_refinement: boolean }
 type FamilyProfile = { piece_id: string; size: string; cad_circle_count: number; fit_quality: string;
@@ -784,6 +792,36 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
                         como este pico se compara a regiões vizinhas da malha,
                         NÃO é probabilidade de acerto ou confiança industrial.</small>
                     </div>
+                  </div>
+                  <div v-if="selectedFamilyProfile?.guided_regions?.length" class="irregular-summary">
+                    <strong>Pesquisa de pequenos traços e aberturas irregulares — sem hipótese circular</strong>
+                    <p>Análise experimental independente: compara três escalas (5, 9, 15 px)
+                      com outras regiões da mesma trama. Mesmo um sinal incomum
+                      <b>NÃO confirma que exista um furo</b>, e uma região inconclusiva
+                      não comprova ausência.</p>
+                    <div v-for="region in selectedFamilyProfile.guided_regions" :key="region.cad_id" class="irregular-result">
+                      <b>{{region.cad_id}} ·
+                        {{region.irregular_texture?.status==='sinal_incomum'?'contraste irregular incomum':
+                          region.irregular_texture?.status==='sem_destaque'?'sem destaque perante a trama':'inconclusivo'}}
+                      </b>
+                      <span>{{region.irregular_texture?.message ?? 'Sem diagnóstico disponível.'}}</span>
+                      <span v-if="region.irregular_texture?.best_peak_px">
+                        Ponto de maior destaque: ({{region.irregular_texture.best_peak_px.join(', ')}}) px,
+                        a {{region.irregular_texture.best_peak_distance_px}} px do centro CAD.
+                        Distância visual, NÃO dimensional.
+                      </span>
+                      <div v-if="region.irregular_texture?.bands?.length" class="irregular-bands">
+                        <span v-for="band in region.irregular_texture.bands" :key="band.kernel_px">
+                          Escala {{band.kernel_px}} px: sinal {{band.roi_peak_levels}} · trama P95
+                          {{band.texture_p95_levels}} · diferença
+                          {{band.margin_levels > 0 ? '+' : ''}}{{band.margin_levels}}
+                          {{band.unusual_contrast?'(incomum)':'(não distinto)'}}
+                        </span>
+                      </div>
+                    </div>
+                    <p class="note">Os resultados acima são observações ópticas, NÃO entram
+                      na contagem automática de vazadores ou na taxa de recuperação da validação.
+                      A busca global permanece ativa para sinais fora do padrão CAD.</p>
                   </div>
                   <div v-if="cadVsManual" class="manual-cad-review">
                     <strong>Conferência humana: alinhamento CAD × detecção óptica</strong>
