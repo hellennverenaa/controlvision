@@ -54,6 +54,47 @@ def _chamfer(projected, target):
                   np.partition(b, kb - 1)[:kb].mean()) / 2)
 
 
+
+def _refine_rigid_outline(scaled_cad, centered_photo, initial_theta, max_shift_px):
+    """Refina rotação/translação da projeção usando APENAS contornos.
+
+    Não altera a escala do CAD. Limita o deslocamento para evitar esconder
+    deformações reais com um alinhamento visual exagerado.
+    """
+    translation = np.zeros(2, dtype=np.float64)
+    theta = float(initial_theta)
+    original_error = _chamfer(scaled_cad @ _rotation(theta).T, centered_photo)
+    error = original_error
+    # Busca local determinística, sem pontos internos, sem scaling adicional.
+    stages = (
+        (max(2., max_shift_px * .32), math.radians(1.)),
+        (max(1., max_shift_px * .14), math.radians(.35)),
+        (.4, math.radians(.12)),
+    )
+    for step_px, step_theta in stages:
+        deltas = [
+            (dx * step_px, dy * step_px, 0.)
+            for dx, dy in ((-1,0),(1,0),(0,-1),(0,1),
+                           (-1,-1),(-1,1),(1,-1),(1,1))
+        ]
+        deltas.extend(((0., 0., -step_theta), (0., 0., step_theta)))
+        for _ in range(7):
+            best = None
+            for dx, dy, dtheta in deltas:
+                shift = translation + np.array([dx, dy])
+                if float(np.linalg.norm(shift)) > max_shift_px:
+                    continue
+                angle = theta + dtheta
+                candidate = _chamfer(scaled_cad @ _rotation(angle).T + shift,
+                                     centered_photo)
+                if candidate < error - 1e-5 and (best is None or candidate < best[0]):
+                    best = (candidate, angle, shift)
+            if best is None:
+                break
+            error, theta, translation = best
+    return theta, translation, original_error, error
+
+
 def match_visual(cad_contour, photo_contour, cad_features, image_candidates):
     """Sobrepõe por rotação+translação e fator de EXIBIÇÃO, nunca para mm.
 
@@ -84,14 +125,42 @@ def match_visual(cad_contour, photo_contour, cad_features, image_candidates):
         for delta in np.arange(-10, 10.01, 1.0):
             theta = base_angle + math.radians(float(delta))
             finalists.append((_chamfer(scaled @ _rotation(theta).T, photo_s), theta))
-    error_px, theta = min(finalists, key=lambda item: item[0])
-    rotation = _rotation(theta)
+    _, theta = min(finalists, key=lambda item: item[0])
+    # A etapa anterior fixa os centros pela média do perímetro. Nas peças
+    # de malha, rebarbas e pontas deslocam essa média mesmo quando a forma
+    # principal se encaixa. Refinamos pequenas translações e rotações.
+    max_translation = min(35., max(4., math.sqrt(photo_area) * .06))
+    theta_refined, shift, initial_error_px, error_px = _refine_rigid_outline(
+        scaled, photo_s, theta, max_translation
+    )
 
-    def project(point):
+    def project_at(point, angle, offset):
         xy = np.asarray(point, dtype=np.float64) * [1., -1.]
         if xy.shape != (2,) or not np.isfinite(xy).all():
             raise ValueError("Coordenada CAD inválida.")
-        return (xy - center_c) * scale_visual @ rotation.T + center_p
+        return (xy - center_c) * scale_visual @ _rotation(angle).T + center_p + offset
+
+    # Mantemos o ajuste de origem se uma melhoria na média dos contornos
+    # fizer o encaixe das SILHUETAS piorar. Nenhum vazador é referência.
+    def silhouette_difference(angle, offset):
+        a = Polygon([project_at(p, angle, offset) for p in _polygon(cad_contour)])
+        b = Polygon(photo)
+        if not (a.is_valid and b.is_valid):
+            return None
+        union = a.union(b).area
+        return 100 * (1. - a.intersection(b).area / union) if union > 0 else None
+
+    shape_before = silhouette_difference(theta, np.zeros(2))
+    shape_after = silhouette_difference(theta_refined, shift)
+    if (shape_before is not None and shape_after is not None
+            and shape_after > shape_before + .25):
+        # Por segurança, não trocar um bom encaixe por melhor Chamfer local.
+        theta_refined = theta
+        shift = np.zeros(2)
+        error_px = initial_error_px
+
+    def project(point):
+        return project_at(point, theta_refined, shift)
 
     relative_error = error_px / math.sqrt(photo_area)
     reliable_enough = relative_error <= .09
@@ -155,6 +224,17 @@ def match_visual(cad_contour, photo_contour, cad_features, image_candidates):
         "status": "preview_only",
         "units": "pixels_nao_calibrados",
         "registration": "alinhamento_ilustrativo_por_silhueta",
+        "registration_refinement": {
+            "method": "rotacao_e_translacao_limitadas_pelo_contorno",
+            "translation_px": np.round(shift, 1).tolist(),
+            "translation_magnitude_px": round(float(np.linalg.norm(shift)), 1),
+            "rotation_adjustment_deg": round(
+                float(math.degrees(theta_refined - theta)), 2
+            ),
+            "initial_chamfer_px": round(initial_error_px, 2),
+            "refined_chamfer_px": round(error_px, 2),
+            "scale_changed_during_refinement": False,
+        },
         "fit_quality": quality,
         "shape_error_relative": round(relative_error, 4),
         "visual_shape_difference_percent": overlay_difference_percent,
@@ -164,6 +244,7 @@ def match_visual(cad_contour, photo_contour, cad_features, image_candidates):
         "projected_contour": [project(p).round(1).tolist() for p in _polygon(cad_contour)],
         "warnings": [
             "Correspondência apenas visual; escala ilustrativa não é calibração.",
+            "Refino limitado usa apenas o contorno externo; centros internos não são utilizados.",
             "Pontos não associados podem decorrer de sombra, rabiscos e perspectiva.",
             "Diferença percentual visual usa normalização de escala e não representa erro de corte.",
             "Não inferir medidas em mm, conformidade ou defeitos nesta prévia.",
