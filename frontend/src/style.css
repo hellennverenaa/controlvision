@@ -141,3 +141,9 @@
 .guided-region>b{font-size:12px;color:#244c7b}
 .guided-region>span{font-size:12px;color:#53667b;line-height:1.5}
 .guided-region>small{font-size:11px;color:#7b8594;line-height:1.5}
+
+
+/* Comparação manual dos 3 pontos com o CAD: análise de pixels, não erro de corte. */
+.manual-cad-review{background:#fff;border:1px dashed #9eb8dc;border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:6px}
+.manual-cad-review>strong{color:#28557a;font-size:12px}
+.manual-cad-review>p{margin:0;color:#536881;line-height:1.55;font-size:12px}
