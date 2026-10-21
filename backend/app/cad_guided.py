@@ -58,6 +58,12 @@ def analyze_predicted_regions(image, photo_contour, centers, piece_tone="light")
             "max_local_signal_levels": None,
             "threshold_levels": None,
             "noise_sigma_levels": None,
+            # O pico mais forte SEM limiar serve exclusivamente de diagnóstico.
+            # Pode ser trama/ruído. Não gera candidato nem muda o status.
+            "raw_peak_px": None,
+            "raw_peak_distance_px": None,
+            "contrast_margin_levels": None,
+            "signal_at_cad_center_levels": None,
             "message": "Região inconclusiva; ausência de sinal não significa vazador ausente.",
         }
         if not (0 <= x < w and 0 <= y < h):
@@ -83,6 +89,20 @@ def analyze_predicted_regions(image, photo_contour, centers, piece_tone="light")
         result["max_local_signal_levels"] = round(float(np.max(values)), 1)
         result["threshold_levels"] = round(threshold, 1)
         result["noise_sigma_levels"] = round(noise_sigma, 1)
+        result["contrast_margin_levels"] = round(
+            result["max_local_signal_levels"] - result["threshold_levels"], 1
+        )
+        # Pixel mais contrastado, independentemente do limiar; identificar
+        # distância ao centro previsto SEM interpretá-lo como furo.
+        masked_signal = np.where(eligible, roi, -np.inf)
+        raw_index = np.unravel_index(int(np.argmax(masked_signal)), roi.shape)
+        raw_y, raw_x = int(raw_index[0]) + y0, int(raw_index[1]) + x0
+        result["raw_peak_px"] = [raw_x, raw_y]
+        result["raw_peak_distance_px"] = round(
+            float(np.hypot(raw_x - x, raw_y - y)), 1
+        )
+        ix, iy = min(w-1, max(0, int(round(x)))), min(h-1, max(0, int(round(y))))
+        result["signal_at_cad_center_levels"] = round(float(signal[iy, ix]), 1)
         peaks_mask = ((roi > threshold) &
                       (roi >= cv2.dilate(roi, np.ones((5, 5), np.uint8))) &
                       eligible)
@@ -97,7 +117,8 @@ def analyze_predicted_regions(image, photo_contour, centers, piece_tone="light")
             if result["max_local_signal_levels"] < result["threshold_levels"]:
                 result["message"] = (
                     "Maior contraste observado ficou abaixo do limiar exigido pelo filtro. "
-                    "Pode ser textura/baixo contraste OU centro CAD deslocado; não comprova furo ausente."
+                    "A posição do pico bruto ajuda a investigar a imagem, mas pode ser trama "
+                    "ou ruído; não comprova furo ausente."
                 )
             else:
                 result["message"] = (
