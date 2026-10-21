@@ -39,6 +39,8 @@ def test_all_sizes_are_considered_without_claiming_size():
     assert set(item["size"] for item in result["profiles"]) == set(map(str,range(17,26)))
     assert all(item["cad_circle_count"] == 3 for item in result["profiles"])
     assert all(item["nearby_candidates"] == 3 for item in result["profiles"])
+    assert all(item["visual_shape_difference_percent"] is not None for item in result["profiles"])
+    assert all(0 <= item["visual_shape_difference_percent"] <= 100 for item in result["profiles"])
     # Cada referência exibe também a silhueta CAD projetada, para o
     # operador julgar o alinhamento ANTES de interpretar os furos.
     assert all(len(item["projected_contour"]) == len(OUTLINE) for item in result["profiles"])
