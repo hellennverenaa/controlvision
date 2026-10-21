@@ -82,3 +82,28 @@ def test_registro_dos_limiares_mesmo_sem_picos():
         assert point["max_local_signal_levels"] is not None
         assert point["threshold_levels"] > point["max_local_signal_levels"]
         assert "limiar" in point["message"].lower()
+
+
+def test_pico_bruto_nao_confirma_furo_e_registra_distancia():
+    img, poly = scene()
+    # Sinal local de contraste claro, no lugar previsto pelo CAD.
+    center = positions()[1]["position_px"]
+    cv2.circle(img, tuple(map(int, center)), 2, (70, 70, 70), -1)
+    result = analyze_predicted_regions(img, poly, [positions()[1]])[0]
+    assert result["raw_peak_px"] is not None
+    assert result["raw_peak_distance_px"] <= 3
+    assert result["contrast_margin_levels"] is not None
+    assert result["signal_at_cad_center_levels"] is not None
+    assert result["status"] in ("sinal_suspeito", "inconclusivo")
+    assert "furo_confirmado" not in str(result)
+
+
+def test_pico_bruto_em_regiao_lisa_nao_cria_vazadores():
+    img, poly = scene()
+    result = analyze_predicted_regions(img, poly, [positions()[1]])[0]
+    assert result["status"] == "inconclusivo"
+    assert result["raw_peak_px"] is not None
+    assert result["contrast_margin_levels"] < 0
+    assert result["best_signal_px"] is None
+    assert result["optical_peaks"] == 0
+
