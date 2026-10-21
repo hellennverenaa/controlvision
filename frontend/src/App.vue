@@ -24,7 +24,9 @@ type GuidedRegion = { cad_id: string; position_px: number[]; roi_radius_px: numb
   best_signal_px: number[]|null; best_signal_levels: number|null;
   distance_to_projected_center_px: number|null; message: string;
   max_local_signal_levels?: number|null; threshold_levels?: number|null;
-  noise_sigma_levels?: number|null }
+  noise_sigma_levels?: number|null; raw_peak_px?: number[]|null;
+  raw_peak_distance_px?: number|null; contrast_margin_levels?: number|null;
+  signal_at_cad_center_levels?: number|null }
 type RegistrationRefinement = { method: string; translation_px: number[]; translation_magnitude_px: number;
   rotation_adjustment_deg: number; initial_chamfer_px: number; refined_chamfer_px: number; scale_changed_during_refinement: boolean }
 type FamilyProfile = { piece_id: string; size: string; cad_circle_count: number; fit_quality: string;
@@ -606,6 +608,15 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
                       </template>
                       <template v-if="region.best_signal_px"> · pico selecionado: {{region.best_signal_levels}} níveis,
                         a {{region.distance_to_projected_center_px}} px do centro projetado</template>
+                    </small>
+                    <small v-if="region.raw_peak_px && region.contrast_margin_levels != null">
+                      Investigação sem relaxar o filtro: margem em relação ao limiar
+                      <b>{{region.contrast_margin_levels > 0 ? '+' : ''}}{{region.contrast_margin_levels}} níveis</b>.
+                      Pixel de maior contraste (mesmo se rejeitado):
+                      {{region.raw_peak_px.join(', ')}} px, a
+                      {{region.raw_peak_distance_px}} px do centro CAD.
+                      Sinal exatamente no centro CAD: {{region.signal_at_cad_center_levels}} níveis.
+                      <strong>O pico bruto pode ser apenas textura. Não é furo detectado.</strong>
                     </small>
                   </div>
                   <div v-if="cadVsManual" class="manual-cad-review">
