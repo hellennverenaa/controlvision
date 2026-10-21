@@ -49,6 +49,7 @@ def compare_size_family(pieces, photo_contour, circle_candidates, micro_candidat
             "cad_circle_count": len(cad_features),
             "fit_quality": output["fit_quality"],
             "shape_error_relative": output["shape_error_relative"],
+            "registration_refinement": output["registration_refinement"],
             "visual_shape_difference_percent": output["visual_shape_difference_percent"],
             # Contorno CAD projetado, apenas para comparar visualmente com
             # a silhueta vermelha. A escala é ilustrativa, não metrológica.
