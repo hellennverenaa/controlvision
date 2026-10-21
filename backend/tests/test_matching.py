@@ -76,3 +76,32 @@ def test_percentual_nao_e_reportado_em_alinhamento_ruim():
     result = match_visual(CAD, image_contour, FEATURES, [])
     assert result["fit_quality"] == "baixa"
     assert result["visual_shape_difference_percent"] is None
+
+
+def test_refino_local_recupera_translacao_sem_alterar_escala():
+    import numpy as np
+    from app.matching import _refine_rigid_outline, _rotation
+
+    sample = np.asarray(CAD, dtype=float) * [1, -1]
+    angle = math.radians(26)
+    extra = np.asarray([10.5, -7.0])
+    photo = sample @ _rotation(angle).T + extra
+    found_angle, found_shift, old_error, new_error = _refine_rigid_outline(
+        sample, photo, angle, max_shift_px=25.
+    )
+    assert new_error < old_error
+    assert np.linalg.norm(found_shift - extra) < 1.5
+    assert abs(math.degrees(found_angle-angle)) < 1.0
+
+
+def test_refinamento_da_projecao_nao_modifica_tamanho_cad():
+    output = match_visual(
+        CAD, [camera_projection(p, 37) for p in CAD],
+        FEATURES, []
+    )
+    info = output["registration_refinement"]
+    assert info["scale_changed_during_refinement"] is False
+    assert info["refined_chamfer_px"] <= info["initial_chamfer_px"] + 1e-5
+    assert info["translation_magnitude_px"] <= 35
+    assert output["units"] == "pixels_nao_calibrados"
+    assert "mm" not in output
