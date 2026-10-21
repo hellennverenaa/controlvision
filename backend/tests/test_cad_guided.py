@@ -107,3 +107,35 @@ def test_pico_bruto_em_regiao_lisa_nao_cria_vazadores():
     assert result["best_signal_px"] is None
     assert result["optical_peaks"] == 0
 
+
+
+def test_compara_sinal_isolado_com_controles_da_mesma_peca():
+    img, poly = scene()
+    # Tecido uniforme mais um sinal escuro excepcional na posição CAD.
+    cv2.circle(img, (300, 270), 2, (30, 30, 30), -1)
+    out = analyze_predicted_regions(img, poly, [positions()[1]])[0]
+    assert out["texture_reference_window_count"] >= 30
+    assert out["texture_target_peak_levels"] > out["texture_reference_p90_levels"]
+    assert out["texture_peak_excess_p90_levels"] > 10
+    assert out["texture_distinctiveness"] == "contraste_incomum_na_regiao"
+    assert out["status"] in ("sinal_suspeito", "inconclusivo")
+
+
+def test_peca_lisa_nao_classifica_percentil_100_como_furo():
+    img, poly = scene()
+    out = analyze_predicted_regions(img, poly, [positions()[1]])[0]
+    assert out["texture_reference_window_count"] >= 30
+    assert out["texture_peak_percentile"] == 100
+    assert out["texture_distinctiveness"] == "sem_destaque_frente_a_trama"
+    assert out["optical_peaks"] == 0
+
+
+def test_trama_regular_nao_e_automaticamente_vazador():
+    img, poly = scene()
+    for y in range(105, 367, 12):
+        for x in range(140, 487, 12):
+            cv2.circle(img, (x, y), 2, (90, 90, 90), -1)
+    out = analyze_predicted_regions(img, poly, [positions()[1]])[0]
+    assert out["texture_reference_window_count"] >= 30
+    assert out["texture_distinctiveness"] == "sem_destaque_frente_a_trama"
+    assert out["status"] != "furo_confirmado"
