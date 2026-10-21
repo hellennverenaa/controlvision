@@ -22,7 +22,9 @@ type MatchPreview = { status: 'preview_only'; fit_quality: string; shape_error_r
 type GuidedRegion = { cad_id: string; position_px: number[]; roi_radius_px: number;
   status: 'sinal_suspeito'|'textura_ambigua'|'inconclusivo'; optical_peaks: number;
   best_signal_px: number[]|null; best_signal_levels: number|null;
-  distance_to_projected_center_px: number|null; message: string }
+  distance_to_projected_center_px: number|null; message: string;
+  max_local_signal_levels?: number|null; threshold_levels?: number|null;
+  noise_sigma_levels?: number|null }
 type FamilyProfile = { piece_id: string; size: string; cad_circle_count: number; fit_quality: string;
   shape_error_relative: number; nearby_candidates: number; projected_contour: number[][]; visual_shape_difference_percent: number|null;
   projected_circles: { cad_id: string; nearest_candidate_id: string|null; position_px: number[] }[];
@@ -56,6 +58,33 @@ const showCircleCandidates = ref(true)
 const zoomPhoto = ref(false)
 const annotatePhoto = ref(false)
 const manualMarks = ref<ManualMark[]>([])
+/** Distância entre marcações humanas e centros CAD apenas para auditar
+ *  o alinhamento da prévia. Uma associação nunca confirma vazador. */
+const cadVsManual = computed(() => {
+  const centers = selectedFamilyProfile.value?.projected_circles
+  const marks = manualMarks.value
+  if (!centers || marks.length!==3 || centers.length!==3) return null
+  const permutations = [[0,1,2],[0,2,1],[1,0,2],[1,2,0],[2,0,1],[2,1,0]]
+  const options=permutations.map(mapping => ({
+    cost: mapping.reduce((total, ci, mi) => total+
+      Math.hypot(marks[mi].x-centers[ci].position_px[0],
+                 marks[mi].y-centers[ci].position_px[1]),0),
+    mapping,
+  }))
+  const best=options.reduce((x,y)=>y.cost<x.cost?y:x)
+  const pairs=best.mapping.map((ci,mi)=>({
+    mark_id:marks[mi].id,
+    cad_id:centers[ci].cad_id,
+    distance_px:Math.round(Math.hypot(marks[mi].x-centers[ci].position_px[0],
+                                       marks[mi].y-centers[ci].position_px[1])*10)/10,
+    roi_radius_px:selectedFamilyProfile.value?.guided_regions?.find(r=>r.cad_id===centers[ci].cad_id)?.roi_radius_px ?? null,
+  }))
+  return {
+    pairs,
+    maximum_px:Math.max(...pairs.map(p=>p.distance_px)),
+    outside_roi:pairs.filter(p=>p.roi_radius_px!==null && p.distance_px>p.roi_radius_px!).length,
+  }
+})
 const manualReport = ref<ManualReport|null>(null)
 const manualBusy = ref(false)
 async function evaluateManualMarks(): Promise<void> {
@@ -529,11 +558,34 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
                   <div v-for="region in selectedFamilyProfile.guided_regions" :key="region.cad_id" class="guided-region">
                     <b>{{region.cad_id}} · {{region.status==='textura_ambigua'?'Textura ambígua':region.status==='sinal_suspeito'?'Sinal suspeito':'Inconclusivo'}}</b>
                     <span>{{region.message}}</span>
-                    <small>Raio da região: {{region.roi_radius_px}} px · picos encontrados: {{region.optical_peaks}}
-                      <template v-if="region.best_signal_px"> · maior sinal {{region.best_signal_levels}} níveis,
+                    <small>Raio da região: {{region.roi_radius_px}} px · picos acima do limiar: {{region.optical_peaks}}.
+                      <template v-if="region.max_local_signal_levels!==null && region.max_local_signal_levels!==undefined">
+                        Máximo observado: {{region.max_local_signal_levels}} níveis ·
+                        limiar exigido: {{region.threshold_levels}} níveis ·
+                        ruído local estimado: {{region.noise_sigma_levels}}.
+                      </template>
+                      <template v-if="region.best_signal_px"> · pico selecionado: {{region.best_signal_levels}} níveis,
                         a {{region.distance_to_projected_center_px}} px do centro projetado</template>
                     </small>
                   </div>
+                  <div v-if="cadVsManual" class="manual-cad-review">
+                    <strong>Conferência humana dos três centros CAD (sem escala física)</strong>
+                    <p>Máxima diferença: {{cadVsManual.maximum_px}} px.
+                      {{cadVsManual.outside_roi}} de 3 marcações ficaram além do raio de investigação CAD.
+                      Isso pode indicar projeção incorreta ou ponto marcado fora do centro; NÃO é erro da peça.</p>
+                    <p v-for="item in cadVsManual.pairs" :key="item.mark_id">
+                      {{item.mark_id}} → {{item.cad_id}}:
+                      {{item.distance_px}} px
+                      <template v-if="item.roi_radius_px!==null">
+                        (busca: {{item.roi_radius_px}} px)
+                      </template>
+                    </p>
+                    <p class="note">Pareamento visual um-para-um dos três cliques com os três centros projetados.
+                      Não identifica numeração, não mede nem confirma furos.</p>
+                  </div>
+                  <p v-else class="note">Para investigar se os centros CAD ficaram deslocados, marque os três
+                    furinhos visíveis em roxo: a distância de cada clique ao centro azul será mostrada aqui.
+                    Não precisa ajustar o CAD nem a sensibilidade para esse teste.</p>
                   <p class="note">Análise condicionada à posição CAD projetada. Um furo deslocado pode ficar fora dessa região;
                     portanto, a busca global e a revisão dos candidatos extras continuam necessárias.</p>
                 </div>
