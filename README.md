@@ -290,6 +290,18 @@ Para diagnosticar V02 sem diminuir a sensibilidade geral, cada ROI CAD agora reg
 
 É preciso repetir o teste com a mesma fotografia e observar onde cai o pico bruto de V02. A resolução, o padrão da malha e a iluminação continuam limitando a capacidade de distinguir um furo real de microaberturas têxteis.
 
+## Estudo do contraste em relação à trama da mesma peça (21/10/2026)
+
+Neste ensaio o alinhamento ilustrativo do contorno ficou com 1,6% de diferença normalizada, 2 de 3 regiões apresentaram picos de contraste e a terceira (V02) permaneceu inconclusiva. Os centros do CAD estavam próximos dos três cliques humanos, então reduzir o limiar da câmera de modo global produziria falsos candidatos na trama.
+
+Foram confrontados os **arquivos originais da peça enviados na conversa**, sem overlays, com as anotações e as diferenças ópticas relatadas. Em análises locais exploratórias, V01 e V03 produziram picos de contraste muito acima das janelas comparáveis de tecido, enquanto V02 produziu picos semelhantes aos das microaberturas da malha. As fotografias **não foram adicionadas ao repositório público**.
+
+Agora o backend compara, em cada centro CAD projetado, o contraste máximo em uma janela de **8 pixels de raio** com centenas de janelas de controle situadas entre 35 e 115 pixels no tecido da mesma peça, inteiramente dentro do contorno e afastadas dos centros CAD. Informa mediana, percentil 90 da referência, margem e percentil empírico. Classifica somente **destaque de contraste** frente à textura, nunca presença/ausência de vazador. Uma janela lisa pode aparecer artificialmente no 100º percentil; por isso o destaque exige também intensidade absoluta e margem.
+
+Esses percentis **não são probabilidade de acerto, erro de peça, nem nível de confiança industrial**. Algumas regiões podem não ter controles suficientes. O método continua dependente da projeção visual dos centros e **não dispensa a detecção global** de eventuais furos deslocados ou extras.
+
+A identificação automática confiável dos vazadores depende de um estudo maior por material e condições de captura, possivelmente com iluminação por transmissão para separar os furos reais das aberturas da malha. As tolerâncias e a calibração métrica continuam adiadas.
+
 ## Limites conhecidos
 
 - Nenhuma aprovação/reprovação automática de produção.
