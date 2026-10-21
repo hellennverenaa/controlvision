@@ -9,6 +9,8 @@ from __future__ import annotations
 import cv2
 import numpy as np
 
+from .texture_anomalies import inspect_irregular_signal
+
 
 def analyze_predicted_regions(image, photo_contour, centers, piece_tone="light"):
     """Analisa sinais em ROIs dos centros CAD projetados, sem alterar o alinhamento.
@@ -85,12 +87,21 @@ def analyze_predicted_regions(image, photo_contour, centers, piece_tone="light")
             "texture_peak_percentile": None,
             "texture_peak_excess_p90_levels": None,
             "texture_distinctiveness": "comparacao_indisponivel",
+            "irregular_texture": None,
             "message": "Região inconclusiva; ausência de sinal não significa vazador ausente.",
         }
         if not (0 <= x < w and 0 <= y < h):
             result["message"] = "Centro CAD projetado fora da fotografia."
             output.append(result)
             continue
+        # Diagnóstico INDEPENDENTE: não exige círculos e não produz
+        # candidatos globais nem validação física. Conserva os filtros originais.
+        other_centers = [
+            other["position_px"] for other in centers if other is not item
+        ]
+        result["irregular_texture"] = inspect_irregular_signal(
+            image, body, [x, y], other_centers
+        )
         # Janelas de controle entre 35 e 115 pixels do centro previsto,
         # completamente internas à peça. Evita os outros centros CAD para
         # não contaminar a referência com possíveis vazadores conhecidos.
