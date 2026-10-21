@@ -329,6 +329,18 @@ Para comparar orientações, clique **Registrar resultado desta fotografia na se
 
 Este modo é **assistido pelo operador e experimental**. Os testes demonstram associação em pixels, não homologia geométrica medida. Não identifica tamanho nem fornece erro em milímetros, e não aprova/reprova nenhuma peça de produção. A associação de 12 px é apenas um critério exploratório, que pode variar de efeito conforme resolução/ângulo/câmera: resultados entre fotografias só podem ser interpretados com essas diferenças em mente.
 
+## Detector experimental de alterações irregulares na trama (21/10/2026)
+
+Para avançar além dos círculos, a Etapa 3 agora inclui, por **cada centro CAD projetado**, uma pesquisa óptica **independente da forma circular**. O backend aplica *black-hat* morfológico em três escalas (kernels elípticos de **5, 9 e 15 px**) dentro de um pequeno recorte da fotografia original. Analisa manchas/traços alongados e outras variações escuras, sem impor critérios de circularidade do OpenCV. A região central de 7 px é confrontada com janelas de controle equivalentes da própria malha, situadas no anel de 34 a 108 px e sem sobrepor os demais centros CAD.
+
+Cada escala apresenta pico óptico, **percentil 95 da trama**, diferença e informação sobre contraste incomum (limites experimentais, não homologados). Os resultados possíveis são **sinal incomum**, **sem destaque** ou **inconclusivo**. **Nenhum desses estados confirma vazador ou ausência**, e nenhum sinal da análise nova entra na contagem amarela de círculos, no detector global, nas associações físicas ou na taxa de recuperação do Modo de Validação dos Vazadores. Essa separação evita aumentar artificialmente a taxa de detecção quando se pesquisa apenas nas posições esperadas do CAD.
+
+A análise está disponível para referências CAD que tenham sobreposição de contorno minimamente aproveitável; suas coordenadas continuam sendo **pixels com escala normalizada para visualização**, sem medição dimensional, numeração inferida nem avaliação de conformidade. Nenhuma imagem real foi incorporada ao repositório.
+
+Testes automatizados incluem: malha com microaberturas regulares, adição de uma **fenda escura alongada** à malha, rotação da fotografia e centros fora da peça. Eles verificam o funcionamento técnico, não estabelecem sensibilidade/especificidade industriais ou validação em todos os materiais. A imagem do teste atual tem três vazadores fisicamente confirmados, mas a confirmação humana **não foi usada para alterar o algoritmo nem seus limiares**.
+
+O próximo passo após conferir os resultados na mesma foto e em orientações distintas é avaliar com o operador se os sinais de V01, V02 e V03 têm estabilidade, mantendo a busca de possíveis furos deslocados ou extras em separado. Se V02 continuar invisível, é um resultado inconclusivo legítimo; poderá exigir nova técnica óptica ou iluminação por transmissão, que ficou para um experimento posterior.
+
 ## Limites conhecidos
 
 - Nenhuma aprovação/reprovação automática de produção.
