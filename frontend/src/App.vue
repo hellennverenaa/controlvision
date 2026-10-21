@@ -16,7 +16,19 @@ type ManualRegion = {
 }
 type AnnotationItem = { mark_id: string; nearest_candidate_id: string|null; nearest_distance_px: number|null; associated_candidate_id: string|null; associated_candidate_type: string|null; associated_distance_px: number|null; status: string }
 type AnnotationComparison = { association_radius_px: number; manually_marked: number; nearby_associations: number; without_nearby_candidate: number; unassociated_candidates: number; marks: AnnotationItem[] }
-type ManualReport = { status: 'manual_guided_preview'; results: ManualRegion[]; annotation_comparison?: AnnotationComparison; warnings: string[] }
+type ReferenceValidation = {
+  status: string; reference_count: number; unverified_mark_count: number;
+  automatically_matched: number; not_detected_near_reference: number;
+  reference_recovery_percent: number|null; unreviewed_candidate_count: number;
+  association_radius_px: number;
+  references: {mark_id:string; status:string; candidate_id:string|null;
+    candidate_type:string|null; distance_px:number|null}[];
+  warnings: string[]
+}
+type ValidationSnapshot = { photoSerial:number; label:string; verified:number;
+  found:number; missed:number; unreviewed:number; recovery:number|null }
+type ManualReport = { status: 'manual_guided_preview'; results: ManualRegion[];
+  annotation_comparison?: AnnotationComparison; reference_validation?: ReferenceValidation; warnings: string[] }
 type MatchedPoint = { cad_id: string; image_id: string; expected_px: number[]; detected_px: number[] }
 type MatchPreview = { status: 'preview_only'; fit_quality: string; shape_error_relative: number; visual_shape_difference_percent: number|null; projected_contour: number[][]; matched: MatchedPoint[]; unmatched_cad: {cad_id:string;position_px:number[]}[]; unmatched_image: {image_id:string;position_px:number[]}[]; warnings: string[] }
 type GuidedRegion = { cad_id: string; position_px: number[]; roi_radius_px: number;
@@ -68,6 +80,42 @@ const showCircleCandidates = ref(true)
 const zoomPhoto = ref(false)
 const annotatePhoto = ref(false)
 const manualMarks = ref<ManualMark[]>([])
+const validationMode = ref(false)
+const physicallyConfirmedMarkIds = ref<string[]>([])
+const validationHistory = ref<ValidationSnapshot[]>([])
+const photoSerial = ref(0)
+function togglePhysicalConfirmation(id: string, checked: boolean): void {
+  if (checked) physicallyConfirmedMarkIds.value = [...new Set([...physicallyConfirmedMarkIds.value, id])]
+  else physicallyConfirmedMarkIds.value = physicallyConfirmedMarkIds.value.filter(item=>item!==id)
+  manualReport.value=null
+}
+function undoLastManualMark(): void {
+  const removed=manualMarks.value.pop()
+  if(removed) physicallyConfirmedMarkIds.value=physicallyConfirmedMarkIds.value.filter(id=>id!==removed.id)
+  manualReport.value=null
+}
+function clearManualMarks(): void {
+  manualMarks.value=[]
+  physicallyConfirmedMarkIds.value=[]
+  manualReport.value=null
+}
+function saveValidationSnapshot(): void {
+  const validated=manualReport.value?.reference_validation
+  if(!validated || validated.reference_count===0 || !lastPhoto.value || !preview.value) return
+  const snapshot: ValidationSnapshot = {
+    photoSerial:photoSerial.value,
+    label:'Foto '+photoSerial.value+' — '+lastPhoto.value.name,
+    verified:validated.reference_count,
+    found:validated.automatically_matched,
+    missed:validated.not_detected_near_reference,
+    unreviewed:validated.unreviewed_candidate_count,
+    recovery:validated.reference_recovery_percent,
+  }
+  validationHistory.value=[
+    ...validationHistory.value.filter(item=>item.photoSerial!==photoSerial.value),snapshot
+  ]
+}
+function clearValidationHistory(): void {validationHistory.value=[]}
 /** Distância entre marcações humanas e centros CAD apenas para auditar
  *  o alinhamento da prévia. Uma associação nunca confirma vazador. */
 const cadVsManual = computed(() => {
@@ -137,6 +185,9 @@ async function evaluateManualMarks(): Promise<void> {
     form.append('file',lastPhoto.value)
     form.append('marks_json',JSON.stringify(manualMarks.value))
     form.append('piece_tone',pieceTone.value)
+    if(validationMode.value) form.append(
+      'physically_confirmed_ids_json',JSON.stringify(physicallyConfirmedMarkIds.value)
+    )
     const response=await fetch('/api/vision/manual-regions',{method:'POST',body:form})
     const data=await response.json()
     if(!response.ok)throw new Error(data.detail??'Falha ao analisar as regiões marcadas.')
@@ -177,6 +228,8 @@ const selected = computed(() => unknownSize.value ? null : catalog.value?.pieces
 const canAdvance = computed(() => !!selected.value || (unknownSize.value && !!catalog.value?.pieces.length))
 function selectPiece(piece: Piece): void { unknownSize.value=false; selectedId.value=piece.id }
 function selectUnknownSize(): void {
+  validationHistory.value=[]
+  physicallyConfirmedMarkIds.value=[]
   unknownSize.value=true
   selectedId.value=null
   preview.value=null;lastPhoto.value=null;manualMarks.value=[]
@@ -219,6 +272,8 @@ const detailBox = computed(() => fitBox(selected.value?.points ?? []))
 async function importFile(event: Event): Promise<void> {
   const file=(event.target as HTMLInputElement).files?.[0]
   if (!file) return
+  validationHistory.value=[]
+  physicallyConfirmedMarkIds.value=[]
   busy.value=true; error.value=''; catalog.value=null; selectedId.value=null
   try {
     const form=new FormData(); form.append('file',file)
@@ -236,7 +291,11 @@ async function importFile(event: Event): Promise<void> {
 }
 
 async function processPhoto(file: File): Promise<void> {
-  if (lastPhoto.value !== file) manualMarks.value=[]
+  if (lastPhoto.value !== file) {
+    photoSerial.value+=1
+    manualMarks.value=[]
+    physicallyConfirmedMarkIds.value=[]
+  }
   manualReport.value=null
   lastPhoto.value=file
   showNoisyMicro.value=false
@@ -291,7 +350,7 @@ function photograph(): void {
   canvas.toBlob(blob=>{if(blob) void processPhoto(new File([blob],'captura.png',{type:'image/png'}))},'image/png')
 }
 watch([photoMode,pieceTone], () => { manualReport.value=null; if(lastPhoto.value) void processPhoto(lastPhoto.value) })
-watch(selectedId, () => {preview.value=null;lastPhoto.value=null;manualMarks.value=[];manualReport.value=null;if(photoUrl.value)URL.revokeObjectURL(photoUrl.value);photoUrl.value='' })
+watch(selectedId, () => {preview.value=null;lastPhoto.value=null;manualMarks.value=[];physicallyConfirmedMarkIds.value=[];validationHistory.value=[];manualReport.value=null;if(photoUrl.value)URL.revokeObjectURL(photoUrl.value);photoUrl.value='' })
 onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl.value)})
 </script>
 
