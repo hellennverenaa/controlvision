@@ -1,0 +1,110 @@
+"""Diagnóstico óptico em regiões sugeridas por uma sobreposição CAD ilustrativa.
+
+NÃO é detector validado de vazadores. Uma região pode conter fibras, pigmento
+ou sombra e nem todo furo verdadeiro coincide com o CAD projetado. Preserva
+também a detecção global para inspecionar sinais deslocados e extras.
+"""
+from __future__ import annotations
+
+import cv2
+import numpy as np
+
+
+def analyze_predicted_regions(image, photo_contour, centers, piece_tone="light"):
+    """Analisa sinais em ROIs dos centros CAD projetados, sem alterar o alinhamento.
+
+    Os resultados não são mm, não confirmam furos e não alteram as detecções
+    globais. Todos os pontos recebem um diagnóstico, inclusive os inconclusivos.
+    """
+    if piece_tone not in ("light", "dark"):
+        raise ValueError("Tom inválido.")
+    if image is None or image.ndim != 3 or image.shape[2] != 3:
+        raise ValueError("Imagem inválida.")
+    if not isinstance(centers, list) or len(centers) > 30:
+        raise ValueError("Quantidade de centros inválida.")
+    h, w = image.shape[:2]
+    polygon = np.asarray(photo_contour, dtype=np.float32)
+    if polygon.ndim != 2 or polygon.shape[1] != 2 or polygon.shape[0] < 3:
+        raise ValueError("Contorno da foto inválido.")
+
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    smooth = cv2.GaussianBlur(gray, (3, 3), 0.7).astype(np.float32)
+    background = cv2.GaussianBlur(gray, (17, 17), 3.7).astype(np.float32)
+    signal = (background - smooth) if piece_tone == "light" else (smooth - background)
+    body = np.zeros((h, w), dtype=np.uint8)
+    cv2.fillPoly(body, [np.rint(polygon).astype(np.int32)], 255)
+    # Região pequena apenas para buscar evidência perto do centro previsto.
+    # A escala fotográfica foi normalizada pelo CAD em outro módulo e não
+    # serve para medir distância física ou aplicar tolerância industrial.
+    body_area = max(1., float(cv2.contourArea(polygon)))
+    radius = min(26, max(13, round(np.sqrt(body_area) * .032)))
+    output = []
+    for number, item in enumerate(centers, 1):
+        center = item.get("position_px")
+        if not isinstance(center, list) or len(center) != 2:
+            raise ValueError("Centro projetado inválido.")
+        x, y = (float(center[0]), float(center[1]))
+        if not np.isfinite([x, y]).all():
+            raise ValueError("Centro projetado não finito.")
+        result = {
+            "cad_id": str(item.get("cad_id", f"V{number}"))[:50],
+            "position_px": [round(x, 1), round(y, 1)],
+            "roi_radius_px": radius,
+            "status": "inconclusivo",
+            "optical_peaks": 0,
+            "best_signal_px": None,
+            "best_signal_levels": None,
+            "distance_to_projected_center_px": None,
+            "message": "Região inconclusiva; ausência de sinal não significa vazador ausente.",
+        }
+        if not (0 <= x < w and 0 <= y < h):
+            result["message"] = "Centro CAD projetado fora da fotografia."
+            output.append(result)
+            continue
+        x0, x1 = max(0, int(x) - radius), min(w, int(x) + radius + 1)
+        y0, y1 = max(0, int(y) - radius), min(h, int(y) + radius + 1)
+        yy, xx = np.mgrid[y0:y1, x0:x1]
+        eligible = (np.hypot(xx - x, yy - y) <= radius) & (body[y0:y1, x0:x1] > 0)
+        if int(eligible.sum()) < 50:
+            result["message"] = "Região muito próxima de borda ou parcialmente fora da peça."
+            output.append(result)
+            continue
+        roi = signal[y0:y1, x0:x1]
+        values = roi[eligible]
+        median = float(np.median(values))
+        mad = float(np.median(np.abs(values - median)))
+        # Regra experimental de contraste local. Uma trama uniforme também
+        # pode produzir picos; múltiplos picos tornam o resultado ambíguo.
+        threshold = max(16., median + 5. * max(1., 1.4826 * mad))
+        peaks_mask = ((roi > threshold) &
+                      (roi >= cv2.dilate(roi, np.ones((5, 5), np.uint8))) &
+                      eligible)
+        py, px = np.where(peaks_mask)
+        peaks = [
+            (float(roi[i, j]), float(np.hypot(j + x0 - x, i + y0 - y)),
+             int(j + x0), int(i + y0))
+            for i, j in zip(py, px)
+        ]
+        result["optical_peaks"] = len(peaks)
+        if not peaks:
+            result["message"] = "Nenhum contraste distinto da trama foi isolado nesta região."
+            output.append(result)
+            continue
+        peak = min(peaks, key=lambda p: (-p[0], p[1]))
+        result["best_signal_px"] = [peak[2], peak[3]]
+        result["best_signal_levels"] = round(peak[0], 1)
+        result["distance_to_projected_center_px"] = round(peak[1], 1)
+        if len(peaks) > 3:
+            result["status"] = "textura_ambigua"
+            result["message"] = (
+                "Múltiplos sinais na região; a textura pode imitar vazadores. "
+                "Não é possível isolar um furo com confiança."
+            )
+        else:
+            result["status"] = "sinal_suspeito"
+            result["message"] = (
+                "Contraste localizado perto do centro projetado; pode ser "
+                "vazador, trama, pigmento ou sombra. Não confirma furo."
+            )
+        output.append(result)
+    return output
