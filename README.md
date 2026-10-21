@@ -12,6 +12,30 @@ Sistema web que importa DXF e HPGL/PLT, identifica peças candidatas e seus cont
 
 ## Executar localmente
 
+### Atalhos Linux para o dia a dia
+
+Depois da instalação inicial, abra **dois terminais**, ambos na raiz do projeto:
+
+    cd ~/Documentos/ambiente_dass/controlvision
+    npm run backend
+
+    # Em outro terminal, na mesma pasta:
+    cd ~/Documentos/ambiente_dass/controlvision
+    npm run frontend
+
+O script `npm run backend` utiliza o Python do próprio `backend/.venv`, inicia FastAPI/Uvicorn na porta 8000 e dispensa `source .venv/bin/activate`. O comando `npm run frontend` chama o Vite em `frontend`. Para interromper, use Ctrl+C em cada terminal.
+
+Se a pasta `backend/.venv` ainda não existir, faça uma única instalação:
+
+    cd backend
+    python3 -m venv .venv
+    .venv/bin/python -m pip install -r requirements.txt
+    cd ..
+
+Esses atalhos usam Bash e foram destinados ao desenvolvimento Linux local. Não configuram PostgreSQL, autenticação, PM2 ou infraestrutura corporativa.
+
+### Comandos manuais (também funcionam)
+
 Backend (Python 3.11 ou superior):
 
     cd backend
