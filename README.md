@@ -251,6 +251,22 @@ Para verificar erro de registro, o operador pode clicar manualmente nos três fu
 
 Assim podemos separar duas hipóteses, antes de tornar o filtro mais sensível: (a) centro CAD projetado fora do furo anotado; (b) sinal de furo dentro da região, mas ocultado pelo ruído e pelo limiar. O detector global não foi limitado às ROIs e permanece independente para não esconder vazadores deslocados ou extras.
 
+## Revisão dos três marcadores em 21/10/2026
+
+Um ensaio com a peça de malha clara apresentou 15 círculos amarelos automáticos, três vazadores anotados pelo operador e três centros CAD de uma sobreposição visual (numeração ainda desconhecida).
+
+| Marca anotada | Candidato da fotografia | Distância | Centro CAD associado | Distância | Raio CAD |
+|---|---|---:|---|---:|---:|
+| M01 | I08 | 2,7 px | V01 | 25,8 px | 17 px |
+| M02 | Nenhum até 12 px | menor distância 118,3 px | V02 | 1,8 px | 17 px |
+| M03 | I04 | 2,7 px | V03 | 38,7 px | 17 px |
+
+**As anotações M01/M03 coincidem visualmente com dois candidatos globais**, mas seus centros CAD projetados caíram fora do raio de busca. M02 está dentro do raio CAD, porém o maior sinal local (64 níveis) foi inferior ao limiar do filtro (75,5 níveis). Portanto, há **dois tipos distintos de falha**: projeção geométrica e filtro óptico.
+
+A Etapa 3 agora combina essas verificações em um painel por marcação humana, com candidato automático mais próximo, distância até centro CAD, raio de investigação e hipótese de falha. O painel exige três marcações manuais, não modifica o contorno nem utiliza as anotações para ajustar o CAD. Esse cuidado evita mascarar um desvio real dos furos com um alinhamento forçado.
+
+O pareamento usa a soma mínima das distâncias para comparação visual; não identifica numeração nem valida vazadores e nunca deve ser usado para liberar peças. Critérios de proximidade em pixels e o percentual de área de silhuetas normalizadas **não constituem tolerância ou medição dimensional**.
+
 ## Limites conhecidos
 
 - Nenhuma aprovação/reprovação automática de produção.
