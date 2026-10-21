@@ -25,8 +25,11 @@ type GuidedRegion = { cad_id: string; position_px: number[]; roi_radius_px: numb
   distance_to_projected_center_px: number|null; message: string;
   max_local_signal_levels?: number|null; threshold_levels?: number|null;
   noise_sigma_levels?: number|null }
+type RegistrationRefinement = { method: string; translation_px: number[]; translation_magnitude_px: number;
+  rotation_adjustment_deg: number; initial_chamfer_px: number; refined_chamfer_px: number; scale_changed_during_refinement: boolean }
 type FamilyProfile = { piece_id: string; size: string; cad_circle_count: number; fit_quality: string;
   shape_error_relative: number; nearby_candidates: number; projected_contour: number[][]; visual_shape_difference_percent: number|null;
+  registration_refinement?: RegistrationRefinement;
   projected_circles: { cad_id: string; nearest_candidate_id: string|null; position_px: number[] }[];
   guided_regions?: GuidedRegion[] }
 type FamilyMatching = { status: string; tested_references: number; profiles: FamilyProfile[]; warnings: string[] }
@@ -573,6 +576,13 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
                   Qualidade do ajuste do contorno: <strong>{{selectedFamilyProfile.fit_quality}}</strong>.
                   Compare primeiro o azul tracejado com a borda vermelha. Só depois interprete os centros azuis.
                   Um alinhamento aparentemente bom não comprova vazadores nem dimensões.
+                </p>
+                <p v-if="selectedFamilyProfile?.registration_refinement" class="note">
+                  Ajuste adicional usando SOMENTE contorno externo:
+                  translação {{selectedFamilyProfile.registration_refinement.translation_magnitude_px}} px
+                  e rotação {{selectedFamilyProfile.registration_refinement.rotation_adjustment_deg}}°.
+                  Nenhuma escala adicional aplicada; centros manuais não foram utilizados.
+                  Esse ajuste ainda é ilustrativo, não uma correção métrica.
                 </p>
                 <p v-if="selectedFamilyProfile?.visual_shape_difference_percent != null" class="note">
                   Área de divergência das silhuetas sobrepostas:
