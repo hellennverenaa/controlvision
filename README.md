@@ -241,6 +241,16 @@ O raio de procura é **em pixels e experimental**, não uma tolerância dimensio
 
 Cada tamanho pode mostrar um diagnóstico semelhante porque a transformação normaliza escala somente para sobreposição. **Não adivinhar numeração, não afirmar percentual de erro do corte e não aprovar a peça.** A técnica precisará de comparação com os três furos físicos conhecidos, imagens de maior fidelidade e, posteriormente, calibração óptica.
 
+## Diagnóstico de ROI e registro dos centros CAD (21/10/2026)
+
+Em uma imagem da lingueta, a prévia apresentou **23 candidatos circulares globais**, 1 de 3 centros CAD associado e **V01, V02 e V03 inconclusivos** (zero picos acima do filtro em regiões de 17 px). A divergência da sobreposição normalizada era 8,7%, que **não é percentual de erro de corte**.
+
+O relatório das regiões CAD foi ampliado para apresentar o **maior sinal de contraste local**, o **limiar que o filtro exigiu** e o **ruído estimado**. Isso permite distinguir uma região sem sinal acima do limiar de um detector que descartou informação por excesso de textura, sem diminuir automaticamente a sensibilidade.
+
+Para verificar erro de registro, o operador pode clicar manualmente nos três furinhos da **mesma fotografia analisada**. A prévia CAD mostrará as três distâncias (em pixels) entre as anotações humanas e os centros projetados, com associação um-para-um que minimiza a soma das distâncias. Também mostra quantas marcações estão além do raio de investigação local. Se estiverem fora, a busca guiada não é capaz de testar esses pontos corretamente. Essas distâncias dependem dos cliques humanos e do alinhamento ilustrativo, **não são erros dimensionais, não escolhem numeração e não comprovam furo**.
+
+Assim podemos separar duas hipóteses, antes de tornar o filtro mais sensível: (a) centro CAD projetado fora do furo anotado; (b) sinal de furo dentro da região, mas ocultado pelo ruído e pelo limiar. O detector global não foi limitado às ROIs e permanece independente para não esconder vazadores deslocados ou extras.
+
 ## Limites conhecidos
 
 - Nenhuma aprovação/reprovação automática de produção.
