@@ -38,6 +38,19 @@ def analyze_predicted_regions(image, photo_contour, centers, piece_tone="light")
     # serve para medir distância física ou aplicar tolerância industrial.
     body_area = max(1., float(cv2.contourArea(polygon)))
     radius = min(26, max(13, round(np.sqrt(body_area) * .032)))
+    # Comparação experimental com a malha vizinha: em vez de diminuir o
+    # limiar para encontrar três pontos, medimos quão incomum é o contraste
+    # perto do centro CAD em relação a janelas SEMELHANTES do próprio tecido.
+    # A distribuição mede raridade óptica, NÃO probabilidade de existir furo.
+    texture_radius = 8
+    texture_kernel = cv2.getStructuringElement(
+        cv2.MORPH_ELLIPSE, (2 * texture_radius + 1,) * 2
+    )
+    texture_max = cv2.dilate(signal, texture_kernel)
+    texture_inside = cv2.erode(body, texture_kernel)
+    cad_centers = np.asarray(
+        [item["position_px"] for item in centers], dtype=np.float64
+    ) if centers else np.empty((0, 2))
     output = []
     for number, item in enumerate(centers, 1):
         center = item.get("position_px")
@@ -64,12 +77,45 @@ def analyze_predicted_regions(image, photo_contour, centers, piece_tone="light")
             "raw_peak_distance_px": None,
             "contrast_margin_levels": None,
             "signal_at_cad_center_levels": None,
+            "texture_window_radius_px": texture_radius,
+            "texture_reference_window_count": 0,
+            "texture_reference_median_levels": None,
+            "texture_reference_p90_levels": None,
+            "texture_target_peak_levels": None,
+            "texture_peak_percentile": None,
             "message": "Região inconclusiva; ausência de sinal não significa vazador ausente.",
         }
         if not (0 <= x < w and 0 <= y < h):
             result["message"] = "Centro CAD projetado fora da fotografia."
             output.append(result)
             continue
+        # Janelas de controle entre 35 e 115 pixels do centro previsto,
+        # completamente internas à peça. Evita os outros centros CAD para
+        # não contaminar a referência com possíveis vazadores conhecidos.
+        cx, cy = int(round(x)), int(round(y))
+        if 0 <= cx < w and 0 <= cy < h and texture_inside[cy, cx]:
+            grid_x = np.arange(max(0, cx - 115), min(w, cx + 116), 8)
+            grid_y = np.arange(max(0, cy - 115), min(h, cy + 116), 8)
+            gx, gy = np.meshgrid(grid_x, grid_y)
+            radii = np.hypot(gx - x, gy - y)
+            valid = ((radii >= 35) & (radii <= 115) &
+                     (texture_inside[gy, gx] > 0))
+            for ocx, ocy in cad_centers:
+                valid &= np.hypot(gx - ocx, gy - ocy) >= 22
+            controls = texture_max[gy[valid], gx[valid]]
+            if controls.size >= 30:
+                target = float(texture_max[cy, cx])
+                result["texture_reference_window_count"] = int(controls.size)
+                result["texture_reference_median_levels"] = round(
+                    float(np.median(controls)), 1
+                )
+                result["texture_reference_p90_levels"] = round(
+                    float(np.percentile(controls, 90)), 1
+                )
+                result["texture_target_peak_levels"] = round(target, 1)
+                result["texture_peak_percentile"] = round(
+                    float(np.mean(controls <= target) * 100), 1
+                )
         x0, x1 = max(0, int(x) - radius), min(w, int(x) + radius + 1)
         y0, y1 = max(0, int(y) - radius), min(h, int(y) + radius + 1)
         yy, xx = np.mgrid[y0:y1, x0:x1]
