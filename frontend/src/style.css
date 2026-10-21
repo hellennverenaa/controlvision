@@ -132,3 +132,12 @@
 .family-preview p{margin:2px 0;line-height:1.5;font-size:12px;color:#476482}
 .family-select{display:flex;flex-direction:column;gap:7px;font-size:12px;color:#2d527e}
 .family-select select{max-width:500px;padding:9px;border:1px solid #c8d6ea;border-radius:7px;background:white;color:#284d7e}
+
+
+/* Diagnóstico no entorno do CAD: não sinaliza aprovação ou defeito. */
+.guided-results{display:flex;flex-direction:column;gap:9px;padding:12px;margin:5px 0;border:1px solid #d0dfef;border-radius:8px;background:#f6f9ff}
+.guided-results>strong{font-size:12px;color:#2a5988}
+.guided-region{display:flex;flex-direction:column;gap:5px;padding:9px 10px;border:1px solid #e0e9f3;border-radius:7px;background:#fff}
+.guided-region>b{font-size:12px;color:#244c7b}
+.guided-region>span{font-size:12px;color:#53667b;line-height:1.5}
+.guided-region>small{font-size:11px;color:#7b8594;line-height:1.5}
