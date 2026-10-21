@@ -9,6 +9,7 @@ from .geometry import read_cad
 from .vision import analyze_image
 from .microholes import inspect_marked_regions
 from .annotation_comparison import compare_annotations
+from .reference_validation import validate_confirmed_holes
 from .family_matching import compare_size_family
 from .cad_guided import analyze_predicted_regions
 from .matching import match_visual
@@ -112,6 +113,7 @@ async def inspect_manual_regions(
     file: UploadFile = File(...),
     marks_json: str = Form(...),
     piece_tone: str = Form("light"),
+    physically_confirmed_ids_json: str | None = Form(None),
 ):
     """Diagnóstico condicionado a anotações humanas. NÃO detecta furos sozinho."""
     if piece_tone not in ("dark", "light"):
@@ -135,6 +137,12 @@ async def inspect_manual_regions(
             preview["candidates"],
             preview.get("micro_candidates", []),
         )
+        if physically_confirmed_ids_json is not None:
+            ids = json.loads(physically_confirmed_ids_json)
+            diagnosis["reference_validation"] = validate_confirmed_holes(
+                marks, ids, preview["candidates"],
+                preview.get("micro_candidates", []),
+            )
         return diagnosis
     except (ValueError, TypeError, KeyError, IndexError) as exc:
         raise HTTPException(422, str(exc)[:200]) from exc
