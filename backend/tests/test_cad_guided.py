@@ -41,6 +41,10 @@ def test_peca_lisa_nao_inventa_tres_furos():
     assert len(outcome) == 3
     assert all(item["status"] == "inconclusivo" for item in outcome)
     assert all(item["best_signal_px"] is None for item in outcome)
+    assert all(item["max_local_signal_levels"] is not None for item in outcome)
+    assert all(item["threshold_levels"] is not None for item in outcome)
+    assert all(item["noise_sigma_levels"] is not None for item in outcome)
+    assert all(item["max_local_signal_levels"] < item["threshold_levels"] for item in outcome)
 
 
 def test_trama_periodica_e_ambigua_nao_furo():
@@ -67,3 +71,14 @@ def test_coordenadas_invalidas_sao_rejeitadas():
     with pytest.raises(ValueError):
         analyze_predicted_regions(
             img, poly, [{"cad_id": "V01", "position_px": [float("nan"), 200]}])
+
+
+def test_registro_dos_limiares_mesmo_sem_picos():
+    img, poly = scene()
+    output = analyze_predicted_regions(img, poly, positions())
+    assert len(output) == 3
+    for point in output:
+        assert point["status"] == "inconclusivo"
+        assert point["max_local_signal_levels"] is not None
+        assert point["threshold_levels"] > point["max_local_signal_levels"]
+        assert "limiar" in point["message"].lower()
