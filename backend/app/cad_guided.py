@@ -55,6 +55,9 @@ def analyze_predicted_regions(image, photo_contour, centers, piece_tone="light")
             "best_signal_px": None,
             "best_signal_levels": None,
             "distance_to_projected_center_px": None,
+            "max_local_signal_levels": None,
+            "threshold_levels": None,
+            "noise_sigma_levels": None,
             "message": "Região inconclusiva; ausência de sinal não significa vazador ausente.",
         }
         if not (0 <= x < w and 0 <= y < h):
@@ -75,7 +78,11 @@ def analyze_predicted_regions(image, photo_contour, centers, piece_tone="light")
         mad = float(np.median(np.abs(values - median)))
         # Regra experimental de contraste local. Uma trama uniforme também
         # pode produzir picos; múltiplos picos tornam o resultado ambíguo.
-        threshold = max(16., median + 5. * max(1., 1.4826 * mad))
+        noise_sigma = 1.4826 * mad
+        threshold = max(16., median + 5. * max(1., noise_sigma))
+        result["max_local_signal_levels"] = round(float(np.max(values)), 1)
+        result["threshold_levels"] = round(threshold, 1)
+        result["noise_sigma_levels"] = round(noise_sigma, 1)
         peaks_mask = ((roi > threshold) &
                       (roi >= cv2.dilate(roi, np.ones((5, 5), np.uint8))) &
                       eligible)
@@ -87,7 +94,16 @@ def analyze_predicted_regions(image, photo_contour, centers, piece_tone="light")
         ]
         result["optical_peaks"] = len(peaks)
         if not peaks:
-            result["message"] = "Nenhum contraste distinto da trama foi isolado nesta região."
+            if result["max_local_signal_levels"] < result["threshold_levels"]:
+                result["message"] = (
+                    "Maior contraste observado ficou abaixo do limiar exigido pelo filtro. "
+                    "Pode ser textura/baixo contraste OU centro CAD deslocado; não comprova furo ausente."
+                )
+            else:
+                result["message"] = (
+                    "Houve contraste na região, mas nenhum pico isolado passou pelos critérios locais. "
+                    "Não é possível determinar se há um vazador."
+                )
             output.append(result)
             continue
         peak = min(peaks, key=lambda p: (-p[0], p[1]))
