@@ -112,6 +112,7 @@ const cadVsManual = computed(() => {
       nearest_photo_candidate_id:nearest?.id ?? null,
       nearest_photo_distance_px:nearest?Math.round(nearest.distance*10)/10:null,
       nearby_photo_candidate:!!nearest && nearest.distance<=12,
+      borderline_photo_candidate:!!nearest && nearest.distance>12 && nearest.distance<=16,
       diagnosis:reason,
       outside_roi:!!outside,
       below_threshold:!outside && !!belowThreshold,
@@ -122,6 +123,7 @@ const cadVsManual = computed(() => {
     maximum_px:Math.max(...pairs.map(p=>p.distance_px)),
     outside_roi:pairs.filter(p=>p.outside_roi).length,
     nearby_photo:pairs.filter(p=>p.nearby_photo_candidate).length,
+    borderline_photo:pairs.filter(p=>p.borderline_photo_candidate).length,
     inside_below_threshold:pairs.filter(p=>p.below_threshold).length,
   }
 })
@@ -648,6 +650,8 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
                   <div v-if="cadVsManual" class="manual-cad-review">
                     <strong>Conferência humana: alinhamento CAD × detecção óptica</strong>
                     <p>{{cadVsManual.nearby_photo}} de 3 marcações com algum candidato automático até 12 px.
+                      {{cadVsManual.borderline_photo}} marcação(ões) em faixa limítrofe de 12 a 16 px,
+                      não contadas como associação.
                       {{cadVsManual.outside_roi}} de 3 fora da região CAD projetada.
                       {{cadVsManual.inside_below_threshold}} dentro da região, mas abaixo do limiar do filtro.</p>
                     <p>Máxima distância entre marcação humana e centro CAD: {{cadVsManual.maximum_px}} px.
@@ -660,7 +664,10 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
                       <span v-if="item.nearest_photo_candidate_id">
                         Candidato automático mais próximo: {{item.nearest_photo_candidate_id}}
                         a {{item.nearest_photo_distance_px}} px
-                        — {{item.nearby_photo_candidate?'próximo da anotação':'longe da anotação'}}.
+                        —
+                        {{item.nearby_photo_candidate ? 'próximo da anotação' :
+                          item.borderline_photo_candidate ? 'distância limítrofe (fora do raio de associação de 12 px)' :
+                          'longe da anotação'}}.
                       </span>
                       <span v-else>Nenhum candidato automático disponível para comparação.</span>
                       <span class="manual-cad-diagnosis">{{item.diagnosis}}</span>
