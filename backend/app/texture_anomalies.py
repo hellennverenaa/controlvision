@@ -31,7 +31,10 @@ def inspect_irregular_signal(image, body_mask, center, other_centers=()):
     if not np.isfinite([cx, cy]).all() or not (0 <= cx < w and 0 <= cy < h):
         result["message"] = "Posição CAD fora da fotografia."
         return result
-    ox, oy = round(cx), round(cy)
+    # Arredondar um centro fracionário junto à margem pode produzir w/h;
+    # evitar indexação fora da imagem nesse caso.
+    ox = min(w - 1, max(0, round(cx)))
+    oy = min(h - 1, max(0, round(cy)))
     pad = 116
     x0, y0 = max(0, ox - pad), max(0, oy - pad)
     x1, y1 = min(w, ox + pad + 1), min(h, oy + pad + 1)
