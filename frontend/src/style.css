@@ -147,3 +147,9 @@
 .manual-cad-review{background:#fff;border:1px dashed #9eb8dc;border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:6px}
 .manual-cad-review>strong{color:#28557a;font-size:12px}
 .manual-cad-review>p{margin:0;color:#536881;line-height:1.55;font-size:12px}
+
+
+.manual-cad-row{display:flex;flex-direction:column;gap:5px;padding:10px 8px;border-top:1px solid #dce8f3}
+.manual-cad-row>b{font-size:12px;color:#224f7d}
+.manual-cad-row>span{font-size:12px;color:#516a86;line-height:1.45}
+.manual-cad-row>.manual-cad-diagnosis{font-weight:700;color:#635122}
