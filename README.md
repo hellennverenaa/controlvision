@@ -227,6 +227,20 @@ Para facilitar a validação, quando o número de candidatos circulares supera f
 
 A prévia da família também apresenta o **percentual de área de divergência entre as silhuetas normalizadas pela escala de exibição**. Esse é um índice **não metrológico**, que não mostra erro dimensional, não resolve a numeração da peça e pode mascarar diferenças de escala; a peça nunca deve ser aprovada com base nesse percentual. Quando o ajuste é ruim, o percentual permanece indisponível.
 
+## Diagnóstico óptico guiado pelas posições CAD (21/10/2026)
+
+Um teste com peça de malha clara mostrou alinhamento visual preliminar (9,1% de diferença **de área normalizada**, não erro dimensional), 15 candidatos ópticos globais e **0 de 3 associações CAD × candidatos**. A falta de associação significa apenas que o detector global não apresentou centros próximos dos projetados. Não significa vazador ausente.
+
+Na prévia de numeração desconhecida, o sistema agora calcula **uma investigação óptica local por círculo CAD projetado** para cada referência com ajuste de contorno não baixo. Usa pequenos recortes dos pixels **da própria foto**, compara contraste com a vizinhança e descreve o resultado como:
+
+- **Sinal suspeito:** uma pequena região contrasta com seu entorno, mas pode ser furo, fibra, pigmento ou sombra.
+- **Textura ambígua:** múltiplos sinais presentes, impedindo distinguir um furo.
+- **Inconclusivo:** não houve evidência local suficiente, o centro ficou fora da área, ou o contorno não permitiu análise segura.
+
+O raio de procura é **em pixels e experimental**, não uma tolerância dimensional. O alinhamento visual pode deslocar a posição projetada, e a inspeção localizada **não pode excluir vazadores deslocados ou extras**. Por isso a detecção global permanece visível no relatório e nenhuma marcação por CAD é somada à contagem de vazadores automaticamente confirmados.
+
+Cada tamanho pode mostrar um diagnóstico semelhante porque a transformação normaliza escala somente para sobreposição. **Não adivinhar numeração, não afirmar percentual de erro do corte e não aprovar a peça.** A técnica precisará de comparação com os três furos físicos conhecidos, imagens de maior fidelidade e, posteriormente, calibração óptica.
+
 ## Limites conhecidos
 
 - Nenhuma aprovação/reprovação automática de produção.
