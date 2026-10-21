@@ -302,6 +302,16 @@ Esses percentis **não são probabilidade de acerto, erro de peça, nem nível d
 
 A identificação automática confiável dos vazadores depende de um estudo maior por material e condições de captura, possivelmente com iluminação por transmissão para separar os furos reais das aberturas da malha. As tolerâncias e a calibração métrica continuam adiadas.
 
+## Diagnóstico de contraste e associação limítrofe (21/10/2026)
+
+Nova fotografia da peça de malha: a sobreposição CAD × silhueta mantém divergência visual normalizada de **1,8%**; os três cliques humanos estão a no máximo **5,5 px** de seus centros CAD ilustrativos. Entretanto, a detecção global retornou **23 candidatos circulares** (muitos sobre a trama), **0 de 3** anotações com candidatos dentro do raio experimental de 12 px e pico local guiado por CAD não conclusivo em V02 e V03.
+
+A comparação de textura mostrou V01 com pico **78** frente ao percentil 90 de **58** (+20 níveis, sinal óptico incomum), V03 com pico **55** frente a **59** (-4), e V02 com pico **48** frente a **63** (-15). Essas janelas de textura usam raio de 8 px, ao passo que a investigação de limiar usa 17 px; **os máximos dos dois métodos não são diretamente comparáveis**. Os percentis não são probabilidade de furo verdadeiro.
+
+Na anotação M03 o candidato I01 ficou a **12,5 px** do clique: apenas **0,5 px acima** do raio de associação configurado. A interface agora indica explicitamente uma **faixa limítrofe entre 12 e 16 px**, sem somar esses casos à contagem de associações e sem mudar o algoritmo de detecção.
+
+A fotografia original correspondente foi examinada em sua resolução de 960 × 1280 px. O contraste cromático azul/branco no entorno dos centros não mostrou separação consistente suficiente para justificar um novo detector de cor nesta captura. A trava de resultados inconclusivos permanece: não ajustar a sensibilidade global apenas para encontrar exatamente três supostos vazadores. Antes de validação industrial, exigir rótulos físicos confiáveis e condições de iluminação mais reprodutíveis.
+
 ## Limites conhecidos
 
 - Nenhuma aprovação/reprovação automática de produção.
