@@ -20,7 +20,7 @@ type ManualReport = { status: 'manual_guided_preview'; results: ManualRegion[]; 
 type MatchedPoint = { cad_id: string; image_id: string; expected_px: number[]; detected_px: number[] }
 type MatchPreview = { status: 'preview_only'; fit_quality: string; shape_error_relative: number; visual_shape_difference_percent: number|null; projected_contour: number[][]; matched: MatchedPoint[]; unmatched_cad: {cad_id:string;position_px:number[]}[]; unmatched_image: {image_id:string;position_px:number[]}[]; warnings: string[] }
 type FamilyProfile = { piece_id: string; size: string; cad_circle_count: number; fit_quality: string;
-  shape_error_relative: number; nearby_candidates: number; projected_contour: number[][];
+  shape_error_relative: number; nearby_candidates: number; projected_contour: number[][]; visual_shape_difference_percent: number|null;
   projected_circles: { cad_id: string; nearest_candidate_id: string|null; position_px: number[] }[] }
 type FamilyMatching = { status: string; tested_references: number; profiles: FamilyProfile[]; warnings: string[] }
 type Preview = { status: string; contour: number[][]; image_size: number[]; detected_regions: number; mode: 'marks'|'holes'; candidates: PhotoCandidate[]; candidate_count: number; micro_candidates?: MicroSignal[]; micro_candidate_count?: number; micro_signal_quality?: string; micro_signals_per_10000_px2?: number; warnings: string[]; matching?: MatchPreview|null; family_matching?: FamilyMatching|null }
@@ -47,6 +47,7 @@ const selectedFamilyProfile = computed(() =>
   preview.value?.family_matching?.profiles[familyProfileIndex.value] ?? null
 )
 const showNoisyMicro = ref(false)
+const showCircleCandidates = ref(true)
 const zoomPhoto = ref(false)
 const annotatePhoto = ref(false)
 const manualMarks = ref<ManualMark[]>([])
@@ -186,6 +187,9 @@ async function processPhoto(file: File): Promise<void> {
     const result=await response.json()
     if (!response.ok) throw Error(result.detail ?? 'Falha ao analisar imagem.')
     preview.value=result as Preview
+    const expected=commonCadCircleCount.value
+    showCircleCandidates.value=!(photoMode.value==='holes' && expected &&
+      result.candidate_count>=Math.max(10,expected*3))
   } catch(e) { error.value=e instanceof Error?e.message:'Erro inesperado' }
   finally { busy.value=false }
 }
@@ -387,7 +391,7 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
             <svg v-if="preview && preview.status!=='capture_invalid'" :viewBox="'0 0 '+preview.image_size[0]+' '+preview.image_size[1]" preserveAspectRatio="none"
               role="img" aria-label="Contorno vermelho da foto, candidatos amarelos e sobreposição CAD azul ilustrativa">
               <polygon :points="pointsToSvg(preview.contour)" class="photo-outline"/>
-              <g v-for="point in preview.candidates" :key="point.id">
+              <g v-if="showCircleCandidates" v-for="point in preview.candidates" :key="point.id">
                 <circle :cx="point.center[0]" :cy="point.center[1]" :r="Math.max(7, point.radius_px+4)" class="photo-point">
                   <title>{{point.id}} · candidato circular clássico na fotografia</title>
                 </circle>
@@ -456,6 +460,9 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
               <p>Os moldes do CAD possuem {{commonCadCircleCount}} geometrias circulares internas cada,
                 mas a fotografia gerou {{preview.candidate_count}} candidatos.
                 Esse excesso pode incluir a trama do material; não indica quantidade de furos presentes.</p>
+              <label><input v-model="showCircleCandidates" type="checkbox">
+                Mostrar os {{preview.candidate_count}} candidatos amarelos para diagnóstico
+              </label>
             </div>
             <div v-if="preview.micro_signal_quality==='excesso_de_textura'" class="micro-noise-alert">
               <strong>Detecção instável: excesso de sinais compatível com textura do material.</strong>
@@ -502,6 +509,11 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
                   Qualidade do ajuste do contorno: <strong>{{selectedFamilyProfile.fit_quality}}</strong>.
                   Compare primeiro o azul tracejado com a borda vermelha. Só depois interprete os centros azuis.
                   Um alinhamento aparentemente bom não comprova vazadores nem dimensões.
+                </p>
+                <p v-if="selectedFamilyProfile?.visual_shape_difference_percent != null" class="note">
+                  Área de divergência das silhuetas sobrepostas:
+                  <strong>{{selectedFamilyProfile.visual_shape_difference_percent.toFixed(1)}}%</strong>
+                  (escala normalizada só para visualização; NÃO é percentual de erro dimensional da peça).
                 </p>
                 <p class="note">Os nove tamanhos podem ser indistinguíveis sem escala métrica. Um encaixe aparente não identifica a numeração nem confirma os furos.</p>
               </template>
