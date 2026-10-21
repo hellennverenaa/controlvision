@@ -19,9 +19,14 @@ type AnnotationComparison = { association_radius_px: number; manually_marked: nu
 type ManualReport = { status: 'manual_guided_preview'; results: ManualRegion[]; annotation_comparison?: AnnotationComparison; warnings: string[] }
 type MatchedPoint = { cad_id: string; image_id: string; expected_px: number[]; detected_px: number[] }
 type MatchPreview = { status: 'preview_only'; fit_quality: string; shape_error_relative: number; visual_shape_difference_percent: number|null; projected_contour: number[][]; matched: MatchedPoint[]; unmatched_cad: {cad_id:string;position_px:number[]}[]; unmatched_image: {image_id:string;position_px:number[]}[]; warnings: string[] }
+type GuidedRegion = { cad_id: string; position_px: number[]; roi_radius_px: number;
+  status: 'sinal_suspeito'|'textura_ambigua'|'inconclusivo'; optical_peaks: number;
+  best_signal_px: number[]|null; best_signal_levels: number|null;
+  distance_to_projected_center_px: number|null; message: string }
 type FamilyProfile = { piece_id: string; size: string; cad_circle_count: number; fit_quality: string;
   shape_error_relative: number; nearby_candidates: number; projected_contour: number[][]; visual_shape_difference_percent: number|null;
-  projected_circles: { cad_id: string; nearest_candidate_id: string|null; position_px: number[] }[] }
+  projected_circles: { cad_id: string; nearest_candidate_id: string|null; position_px: number[] }[];
+  guided_regions?: GuidedRegion[] }
 type FamilyMatching = { status: string; tested_references: number; profiles: FamilyProfile[]; warnings: string[] }
 type Preview = { status: string; contour: number[][]; image_size: number[]; detected_regions: number; mode: 'marks'|'holes'; candidates: PhotoCandidate[]; candidate_count: number; micro_candidates?: MicroSignal[]; micro_candidate_count?: number; micro_signal_quality?: string; micro_signals_per_10000_px2?: number; warnings: string[]; matching?: MatchPreview|null; family_matching?: FamilyMatching|null }
 
@@ -515,6 +520,23 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
                   <strong>{{selectedFamilyProfile.visual_shape_difference_percent.toFixed(1)}}%</strong>
                   (escala normalizada só para visualização; NÃO é percentual de erro dimensional da peça).
                 </p>
+                <p v-if="selectedFamilyProfile?.guided_regions?.length" class="note">
+                  Análise guiada pelo CAD: examina contraste em regiões pequenas próximas dos centros azuis;
+                  NÃO detecta nem confirma furos automaticamente. A detecção global continua independente.
+                </p>
+                <div v-if="selectedFamilyProfile?.guided_regions?.length" class="guided-results">
+                  <strong>Investigação óptica dos {{selectedFamilyProfile.guided_regions.length}} centros previstos — não metrológica</strong>
+                  <div v-for="region in selectedFamilyProfile.guided_regions" :key="region.cad_id" class="guided-region">
+                    <b>{{region.cad_id}} · {{region.status==='textura_ambigua'?'Textura ambígua':region.status==='sinal_suspeito'?'Sinal suspeito':'Inconclusivo'}}</b>
+                    <span>{{region.message}}</span>
+                    <small>Raio da região: {{region.roi_radius_px}} px · picos encontrados: {{region.optical_peaks}}
+                      <template v-if="region.best_signal_px"> · maior sinal {{region.best_signal_levels}} níveis,
+                        a {{region.distance_to_projected_center_px}} px do centro projetado</template>
+                    </small>
+                  </div>
+                  <p class="note">Análise condicionada à posição CAD projetada. Um furo deslocado pode ficar fora dessa região;
+                    portanto, a busca global e a revisão dos candidatos extras continuam necessárias.</p>
+                </div>
                 <p class="note">Os nove tamanhos podem ser indistinguíveis sem escala métrica. Um encaixe aparente não identifica a numeração nem confirma os furos.</p>
               </template>
             </div>
