@@ -267,6 +267,16 @@ A Etapa 3 agora combina essas verificações em um painel por marcação humana,
 
 O pareamento usa a soma mínima das distâncias para comparação visual; não identifica numeração nem valida vazadores e nunca deve ser usado para liberar peças. Critérios de proximidade em pixels e o percentual de área de silhuetas normalizadas **não constituem tolerância ou medição dimensional**.
 
+## Validação geométrica após 3 marcadores fora da região CAD (21/10/2026)
+
+Na última captura, as marcações humanas M01/M02/M03 ficaram a **20,8 / 21,9 / 33,7 pixels dos centros CAD** projetados, respectivamente, contra uma janela de investigação de 17 px. Dois marcadores apresentavam candidatos da imagem próximos, mas isso não implica erro dimensional: a projeção CAD ainda é ilustrativa, a numeração é desconhecida e os cliques humanos não são padrão metrológico.
+
+**Ajuste feito:** o alinhador já avaliava a rotação do contorno e estimava o centro pela média de amostras do perímetro, mas não otimizava pequenas translações depois da rotação. Agora aplica uma **busca local limitada de rotação e translação usando somente o contorno externo** após estabelecer o fator de escala de exibição. Não utiliza candidatos internos, centros do CAD, marcas humanas ou medidas em milímetros para favorecer artificialmente os furos.
+
+O fator de escala ilustrativo permanece **fixo** durante o refinamento; a projeção pode retornar ao encaixe anterior caso a diferença visual entre as silhuetas piore significativamente. A etapa 3 informa magnitude da translação e ajuste angular efetuados. Isso pode melhorar o encaixe sem garantir correção dos centros internos se houver diferença de modelagem, perspectiva, tecido deformado ou escala métrica errada.
+
+**Ainda não se pode usar a sobreposição para aprovar/reprovar peças.** O próximo teste deve verificar se o azul tracejado segue o vermelho após o refinamento e se as distâncias entre centros CAD e três marcas humanas caíram, permaneceram ou aumentaram. Não aceitar nenhuma melhoria fictícia apenas porque o software passou a associar três pontos.
+
 ## Limites conhecidos
 
 - Nenhuma aprovação/reprovação automática de produção.
