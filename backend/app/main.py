@@ -10,6 +10,7 @@ from .vision import analyze_image
 from .microholes import inspect_marked_regions
 from .annotation_comparison import compare_annotations
 from .family_matching import compare_size_family
+from .cad_guided import analyze_predicted_regions
 from .matching import match_visual
 
 app = FastAPI(title="ControlVision", version="0.1.0")
@@ -70,6 +71,16 @@ async def inspect_preview(
                     result["candidates"],
                     result.get("micro_candidates", []),
                 )
+                if mode == "holes":
+                    for profile in result["family_matching"]["profiles"]:
+                        # Se o contorno não encaixa nem visualmente, não há
+                        # justificativa para inspecionar centros CAD projetados.
+                        profile["guided_regions"] = (
+                            analyze_predicted_regions(
+                                img, result["contour"],
+                                profile["projected_circles"], piece_tone,
+                            ) if profile["fit_quality"] != "baixa" else []
+                        )
             except (ValueError, TypeError, KeyError, IndexError) as exc:
                 result["family_matching"] = None
                 result["warnings"].append(
