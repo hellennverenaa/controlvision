@@ -211,6 +211,14 @@ Cada referência usa um fator de escala extraído da área das silhuetas **apena
 
 Há um controle específico de quantos candidatos visuais estão próximos às posições projetadas, mas **proximidade não confirma vazador**; a malha pode produzir pequenos falsos sinais próximos por acaso. Sobreposições com ajuste de contorno baixo não devem ser usadas. É imprescindível validar esse caminho com peças físicas e referência verificada antes de qualquer conclusão industrial.
 
+## Teste visual CAD × foto com tamanho ainda desconhecido
+
+Na prévia da família CAD, o sistema apresenta agora **o contorno CAD em azul tracejado**, junto dos três centros CAD também azuis. O contorno **vermelho** continua sendo a silhueta segmentada da fotografia; os círculos **amarelos** são candidatos ópticos e não vazadores confirmados.
+
+Confira primeiro se o contorno azul realmente acompanha o vermelho. Se não acompanhar, o deslocamento dos centros azuis pode ser **erro de alinhamento**, e não problema com os vazadores da peça. Só depois examine as coincidências dos pontos. A interface também mostra a qualidade experimental do ajuste.
+
+A transformação utiliza escala **normalizada para visualização**, rotação e translação. Não representa medição dimensional e **não escolhe automaticamente a numeração**. Esta mudança melhora o diagnóstico da sobreposição, mas não declara o detector de vazadores validado.
+
 ## Limites conhecidos
 
 - Nenhuma aprovação/reprovação automática de produção.
