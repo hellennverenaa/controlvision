@@ -159,3 +159,29 @@
 .texture-compare>strong{font-size:12px;color:#31526c}
 .texture-compare>span{font-size:12px;line-height:1.4;color:#446279}
 .texture-compare>small{font-size:11px;color:#657e91;line-height:1.45}
+
+
+/* O modo de validação preserva a diferença entre referência física humana
+   e detecção automática. Sem cor de aprovação/reprovação industrial. */
+.reference-validation,
+.reference-validation-results,
+.reference-validation-history{
+  display:flex;flex-direction:column;gap:10px;padding:14px;
+  border:1px solid #cfdded;border-radius:10px;background:#f9fbff;
+}
+.reference-title{display:flex;align-items:center;gap:10px;font-size:14px;color:#1f4778;cursor:pointer}
+.reference-title input,.validation-mark input{accent-color:#2763c8}
+.validation-mark{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;
+  gap:10px;padding:10px;background:#fff;border:1px solid #e0e8f4;border-radius:8px;font-size:12px}
+.validation-mark label{display:flex;align-items:center;gap:7px;cursor:pointer;color:#294c6f}
+.reference-validation-results strong,.reference-validation-history>strong{color:#24517c;font-size:13px}
+.reference-validation-results p,.reference-validation-history p{
+  color:#4c6279;font-size:12px;line-height:1.5;margin:0
+}
+.reference-row{display:flex;align-items:baseline;gap:12px;border-top:1px solid #dfe7f0;
+  padding-top:9px;font-size:12px;color:#395977}
+.reference-row b{min-width:38px;color:#25486d}
+.history-table-wrap{width:100%;overflow-x:auto}
+.reference-validation-history table{width:100%;border-collapse:collapse;font-size:12px;text-align:left}
+.reference-validation-history td,.reference-validation-history th{border-bottom:1px solid #e1eaf3;padding:9px;white-space:nowrap}
+.reference-validation-history th{color:#365675;font-weight:700}
