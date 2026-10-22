@@ -1,5 +1,7 @@
 # ControlVision
 
+> 🧭 **Roteiro vivo do projeto:** [PLANO_DESENVOLVIMENTO.md](PLANO_DESENVOLVIMENTO.md). Consulte antes de iniciar uma nova etapa e atualize-o junto com cada entrega.
+
 **Protótipo experimental de inspeção geométrica de peças cortadas. NÃO HOMOLOGADO para liberar produção.**
 
 Sistema web que importa DXF e HPGL/PLT, identifica peças candidatas e seus contornos internos, permite selecionar uma peça pela lista ou clicando no desenho e analisa experimentalmente fotografias ou webcam. A classificação interna pode ser revista pelo operador.
