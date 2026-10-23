@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .geometry import read_cad
 from .vision import analyze_image
+from .segmentation_contract import segment_opencv_baseline
 from .microholes import inspect_marked_regions
 from .annotation_comparison import compare_annotations
 from .reference_validation import validate_confirmed_holes
@@ -38,6 +39,34 @@ async def import_cad(file: UploadFile = File(...)):
         return {"filename": name, **read_cad(name, raw)}
     except Exception as exc:
         raise HTTPException(422, f"Falha ao interpretar CAD: {exc}") from exc
+
+
+@app.post("/api/vision/segmentation/preview")
+async def segmentation_preview(
+    file: UploadFile = File(...),
+    method: str = Form("opencv"),
+    mode: str = Form("holes"),
+    piece_tone: str = Form("light"),
+):
+    """Endpoint opt-in para comparar máscaras: não modifica /api/vision/preview.
+
+    A IA será conectada em outra etapa. Método inexistente é rejeitado
+    explicitamente, não é substituído silenciosamente por OpenCV.
+    """
+    if method != "opencv":
+        raise HTTPException(422, "Método ainda indisponível: use opencv.")
+    if mode not in ("marks", "holes") or piece_tone not in ("dark", "light"):
+        raise HTTPException(422, "Modo ou tom inválido.")
+    raw = await file.read(15_000_001)
+    if len(raw) > 15_000_000:
+        raise HTTPException(413, "Imagem excede 15 MB.")
+    image = cv2.imdecode(np.frombuffer(raw, dtype=np.uint8), cv2.IMREAD_COLOR)
+    if image is None:
+        raise HTTPException(422, "Imagem inválida.")
+    try:
+        return segment_opencv_baseline(image, mode=mode, piece_tone=piece_tone)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
 
 
 @app.post("/api/vision/preview")
