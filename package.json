@@ -1,0 +1,10 @@
+{
+  "name": "controlvision-dev",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Atalhos locais para os serviços do protótipo ControlVision",
+  "scripts": {
+    "backend": "bash ./dev-backend.sh",
+    "frontend": "npm --prefix ./frontend run dev"
+  }
+}

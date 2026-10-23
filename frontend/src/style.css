@@ -1,0 +1,201 @@
+:root{font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;color:#22354b;background:#f3f6fb}*{box-sizing:border-box}body{margin:0}button,input,select{font:inherit}button{cursor:pointer}header{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:18px max(24px,calc((100% - 1440px)/2));background:white;border-bottom:1px solid #e2e9f1}.brand{display:flex;align-items:center;gap:12px}.brand strong{font-size:21px;letter-spacing:-.7px;display:block}.brand small{font-size:12px;color:#728298;display:block}.logo{width:42px;height:42px;display:grid;place-items:center;color:white;background:#135bd8;border-radius:12px;font-weight:800}.tag{font-size:11px;letter-spacing:.4px;font-weight:800;background:#fff1d6;color:#93600a;padding:10px;border-radius:6px}.tag.small{font-size:10px}main{max-width:1440px;margin:auto;padding:28px 24px}.intro{display:flex;justify-content:space-between;align-items:center;gap:24px;margin-bottom:20px}.intro h1{font-size:clamp(24px,3vw,34px);letter-spacing:-1px;margin:7px 0}.intro p{color:#73849b;margin:0;max-width:740px}.eyebrow{font-size:10px;letter-spacing:1.5px;font-weight:800;color:#1460d5}.button{border:none;border-radius:9px;padding:12px 17px;font-weight:700;display:inline-block;cursor:pointer;white-space:nowrap}.button.primary{background:#155cd8;color:#fff}.button.secondary{background:#ebf2ff;color:#1559cb}.alert{padding:13px 16px;background:#fff6e6;color:#72510b;border:1px solid #f0d499;border-radius:10px;font-size:13px;margin:12px 0}.alert.error{background:#fff0f0;color:#a52828;border-color:#eab1b1}.layout{display:grid;grid-template-columns:310px minmax(0,1fr);gap:18px;align-items:start}.panel{border:1px solid #e2e9f2;background:white;box-shadow:0 4px 20px #15304d0d;border-radius:12px;overflow:hidden}.panel-title{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:18px 20px;border-bottom:1px solid #edf2f7}.panel-title h2{font-size:15px;margin:6px 0 0;overflow-wrap:anywhere}.counter{background:#e9f1ff;color:#155dd0;font-weight:800;border-radius:30px;padding:7px 12px}.search{width:calc(100% - 32px);margin:16px;border:1px solid #dfe7f1;border-radius:8px;background:#f9fbfe;padding:11px;outline-color:#4287ec}.items{max-height:700px;overflow-y:auto;padding:0 10px 10px}.item{background:white;border:1px solid transparent;color:#253e5e;border-radius:9px;padding:12px 10px;display:flex;align-items:center;gap:10px;width:100%;text-align:left}.item:hover{background:#f2f6ff}.item.active{background:#eaf2ff;border-color:#bfd2f6}.piece-id{font-size:10px;font-weight:800;color:#466b9c;background:#e9eff9;border-radius:5px;padding:6px}.item strong{font-size:12px;display:block}.item small{display:block;color:#8492a6;font-size:11px;margin-top:4px}.item>b{margin-left:auto;color:#9cabc0}.muted,.note{font-size:12px;color:#8495aa}.items .muted{padding:14px}.workspace{display:grid;gap:18px}.drawing{height:385px;position:relative;background-color:#f9fbff;background-image:linear-gradient(#e7edf7 1px,transparent 1px),linear-gradient(90deg,#e7edf7 1px,transparent 1px);background-size:24px 24px}.drawing svg,.details svg{width:100%;height:100%}.shape{fill:#c4d7f066;stroke:#5880bf;stroke-width:1.6;vector-effect:non-scaling-stroke;cursor:pointer}.shape:hover{fill:#a9c9ff6c}.shape.selected{fill:#8ab7ff60;stroke:#0a58d8;stroke-width:2.8}.feature{fill:none;stroke:#c48213;stroke-width:2;vector-effect:non-scaling-stroke;pointer-events:none}.feature.confirmed{stroke:#05957d}.placeholder{position:absolute;inset:0;display:grid;place-items:center;color:#8697ab}.details{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(190px,1fr);min-height:270px}.details>svg{background:#f9fbff;height:270px}.features{max-height:270px;overflow:auto;padding:16px;border-left:1px solid #edf2f7}.features>label{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px;font-size:12px}.features select{background:#fff;border:1px solid #dce6f2;border-radius:6px;padding:7px;max-width:150px}.note{line-height:1.5}.camera{margin-top:18px}.actions{display:flex;gap:10px;flex-wrap:wrap;padding:16px 20px}.video{display:block;width:420px;max-width:calc(100% - 40px);margin:0 20px 18px;border-radius:8px}.photo-grid{padding:0 20px 20px;min-height:70px;display:flex;gap:20px;align-items:center}.photo{width:min(500px,65%);position:relative}.photo img{width:100%;display:block}.photo svg{position:absolute;inset:0;width:100%;height:100%}.photo polygon{fill:none;stroke:#ff5a43;stroke-width:3;vector-effect:non-scaling-stroke}.metrics{display:flex;flex-direction:column;gap:9px;color:#627992;font-size:13px}.metrics strong{color:#173a68}.metrics p{color:#99600e}footer{padding:24px;text-align:center;color:#8595aa;font-size:12px}@media(max-width:900px){header{align-items:flex-start}.tag{font-size:9px}.layout{grid-template-columns:1fr}.intro{flex-direction:column;align-items:flex-start}.details{grid-template-columns:1fr}.features{border-left:0}.drawing{height:300px}.photo-grid{flex-direction:column;align-items:flex-start}.photo{width:100%}}
+/* Fluxo de validação: comunicamos claramente a sequência e os limites. */
+.workflow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:24px}
+.workflow-step{background:white;border:1px solid #e0e8f3;border-radius:12px;padding:12px 14px;display:grid;grid-template-columns:28px 1fr;grid-template-rows:auto auto;column-gap:9px;align-items:center}
+.workflow-step>span{grid-row:1/3;background:#e6eefa;color:#2862af;font-weight:800;width:27px;height:27px;border-radius:50%;display:grid;place-items:center}
+.workflow-step strong{font-size:12px}.workflow-step small{font-size:11px;color:#8191a7}
+.workflow-step.current{border-color:#8baded;background:#f5f9ff}.workflow-step.current>span{background:#1760d8;color:white}
+.workflow-step.done>span{background:#dcf7eb;color:#168155}
+.workflow-step.locked{opacity:.68}
+.review-banner{padding:12px 18px;background:#f2f7ff;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
+.review-banner strong{font-size:13px;color:#215aa0}.review-banner span{font-size:12px;color:#617eaa}
+.candidate-marker{fill:#ffcd5845;stroke:#e68a0b;stroke-width:2;stroke-dasharray:3 2;vector-effect:non-scaling-stroke;pointer-events:none}
+.candidate-marker.confirmed{fill:#00aa8840;stroke:#00977c}
+.candidate-marker.highlight{fill:#f7a60060;stroke:#e65d00;stroke-width:4}
+.feature-item{padding:9px 0;border-bottom:1px solid #eef3f8;min-height:55px}
+.feature-description{display:flex;flex-direction:column;min-width:95px;gap:3px}
+.feature-description strong{font-size:11px}.feature-description small{font-size:10px;color:#7589a2}
+.features select{font-size:11px;max-width:160px}
+.confirm-button{display:block;margin:15px 0;width:100%;white-space:normal;font-size:12px}
+.next-step{margin-top:18px;padding:18px 20px;background:#eaf3ff;border:1px solid #cbdaf5;border-radius:12px;display:flex;justify-content:space-between;align-items:center;gap:20px}
+.next-step strong{color:#23549d}.next-step p{font-size:12px;line-height:1.5;color:#6983a5;margin:5px 0 0}
+.image-guide{padding:15px 20px;background:#fffaf0;color:#77560c;font-size:13px;line-height:1.6}
+.metrics details{font-size:12px;line-height:1.5}
+.metrics summary{cursor:pointer;color:#2c67ab}
+#etapa-foto{scroll-margin-top:24px}
+@media(max-width:900px){.workflow{grid-template-columns:repeat(2,minmax(0,1fr))}.next-step{flex-direction:column;align-items:flex-start}}
+@media(max-width:500px){.workflow{grid-template-columns:1fr 1fr}.workflow-step{padding:9px}.workflow-step strong{font-size:10px}.workflow-step small{font-size:9px}}
+
+
+/* Etapas reais, selecionáveis; uma única etapa aparece por vez. */
+.workflow button.workflow-step{cursor:pointer;text-align:left;font-family:inherit;color:inherit}
+.workflow button.workflow-step:hover:not(:disabled){border-color:#457ed4;background:#f3f8ff}
+.workflow button.workflow-step:disabled{cursor:not-allowed;opacity:.48}
+.workflow-step[aria-current="step"]{box-shadow:0 0 0 2px #296fe531}
+.start-panel{padding:24px;line-height:1.7;max-width:800px}
+.start-panel h2{margin:0 0 8px}
+.photo-controls{margin:16px 20px 0;padding:16px;border:1px solid #dce8f6;border-radius:10px;display:flex;gap:13px;flex-wrap:wrap;align-items:center;background:#fafcff}
+.photo-controls strong{width:100%;color:#27548b;font-size:13px}
+.photo-controls label{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer}
+.photo-controls input{accent-color:#155cd8}
+.photo-controls p.note{flex-basis:100%;margin:0}
+.image-next-step{display:flex;gap:16px;align-items:center;margin-top:15px;flex-wrap:wrap}
+.metrics{max-width:620px;line-height:1.6}
+.metrics .candidate-warning{background:#fff8e7;padding:12px;border-radius:8px;color:#8f5b0a}
+.photo svg .photo-outline{fill:none;stroke:#f25248;stroke-width:3;vector-effect:non-scaling-stroke}
+.photo svg .photo-point{fill:#efab1050;stroke:#f6b500;stroke-width:2.8;vector-effect:non-scaling-stroke}
+
+
+/* Registro experimental: nunca sugerir tolerância em pixels como decisão. */
+.photo svg .cad-illustrative-outline{fill:none;stroke:#177ff3;stroke-width:2;stroke-dasharray:7 5;vector-effect:non-scaling-stroke}
+.photo svg .match-link{stroke:#00ba94;stroke-width:2.3;vector-effect:non-scaling-stroke}
+.photo svg .cad-match-point{fill:#66ffc577;stroke:#008e67;stroke-width:2;vector-effect:non-scaling-stroke}
+.photo svg .cad-unmatched-point{fill:#ff8a8a77;stroke:#b63a3a;stroke-width:2;stroke-dasharray:3 2;vector-effect:non-scaling-stroke}
+.match-report{padding:13px;border:1px solid #d5e5f5;background:#f6faff;border-radius:9px;display:flex;flex-direction:column;gap:6px}
+.match-report strong{font-size:12px;color:#235a99}
+.match-report .note{color:#7d8598;line-height:1.4}
+.match-toggle{display:flex;align-items:flex-start;gap:7px;font-size:12px;color:#3a6295;cursor:pointer}
+.match-toggle input{accent-color:#1766da;margin-top:3px}
+
+/* Experimentação com numeração não informada e captura de peças claras. */
+.unknown-option{border:1px dashed #a7bdde;background:#f7faff;margin-bottom:8px}
+.unknown-option.active{background:#e5f0ff;border-style:solid;border-color:#4e84d5}
+.tone-selector{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;flex-basis:100%;width:100%;padding:9px 0;border-top:1px solid #e5ecf5}
+.tone-selector strong{width:100%;color:#27548b;font-size:12px}
+.tone-selector label{display:flex;align-items:center;gap:6px}
+.capture-invalid{color:#a85124!important}
+
+.shape-score{display:flex;flex-direction:column;gap:5px;margin:7px 0;padding:12px 13px;background:#eef7ff;border-radius:8px;color:#24558a;font-size:12px}
+.shape-score strong{font-size:21px;color:#1156af}
+.shape-score small{color:#586d88;font-size:11px;line-height:1.5}
+
+
+/* Revisão ampliada de pontos minúsculos: anotações humanas ≠ detecção. */
+.photo-review-controls{padding:12px 20px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-top:1px solid #edf2f7}
+.photo-review-controls .note{flex-basis:100%;margin:1px 0 6px}
+.photo-review-controls button[aria-pressed="true"]{background:#efe2ff;color:#722bb5}
+.photo-grid.with-zoom{display:flex;flex-direction:column;align-items:stretch}
+.photo-grid.with-zoom .photo.inspection-zoom{width:100%;max-width:980px}
+.photo .manual-overlay{pointer-events:none}
+.photo .manual-overlay.mark-active{pointer-events:auto;cursor:crosshair}
+.photo svg .manual-mark{pointer-events:none;fill:none;stroke:#9d3dcb;stroke-width:2.5;vector-effect:non-scaling-stroke}
+.photo svg .manual-mark circle{fill:#9d3dcb35}
+
+
+.manual-results{width:100%;flex-basis:100%;background:#fbf8ff;padding:14px;border:1px solid #d8c6f0;border-radius:10px;display:flex;flex-direction:column;gap:9px}
+.manual-results>strong{font-size:13px;color:#6e2aa4}
+.manual-result{padding:10px;border-radius:8px;background:white;display:flex;flex-direction:column;gap:6px;border-left:3px solid #9952c9}
+.manual-result>span:first-child{color:#69309b;font-weight:750;font-size:12px}
+.manual-result>span{font-size:12px;line-height:1.5;color:#64768c}
+.manual-result>small{font-size:11px;color:#7c8699}
+
+
+/* Pontos de microcontraste em ciano: sinais suspeitos, não furos confirmados. */
+.photo svg .photo-micro-signal{
+  fill:#19b6d01c;
+  stroke:#00a7c7;
+  stroke-width:2.8;
+  stroke-dasharray:5 3;
+  vector-effect:non-scaling-stroke;
+}
+.micro-warning{
+  background:#effbfe;
+  color:#286781;
+  padding:12px;
+  border:1px solid #b9eaf1;
+  border-radius:8px;
+  font-size:12px;
+  line-height:1.5;
+}
+
+/* Uma textura periódica pode produzir dezenas de candidatos falsos.
+   Não usar cores de aprovação nem marcar a peça como defeituosa. */
+.micro-noise-alert{padding:12px;border:1px solid #e3d5bd;background:#fcfaf6;border-radius:9px;color:#604e38;display:flex;flex-direction:column;gap:8px;font-size:12px}
+.micro-noise-alert strong{color:#5a4328;font-size:13px}
+.micro-noise-alert p{margin:0;line-height:1.5}
+.micro-noise-alert label{cursor:pointer;display:flex;gap:8px;align-items:center}
+.micro-noise-alert input{accent-color:#155cd8}
+
+
+.resolution-warning{background:#fff9e9;border:1px solid #eedab0;padding:12px;border-radius:8px;color:#785920;font-size:12px;line-height:1.5}
+
+/* Diagnóstico de marcações: critério somente de proximidade em pixels. */
+.annotation-compare{display:flex;flex-direction:column;gap:8px;padding:12px;margin:8px 0;border:1px solid #dce5f2;border-radius:9px;background:#fff}
+.annotation-compare>strong{font-size:12px;color:#304b6a}
+.annotation-compare>p{font-size:12px;line-height:1.5;color:#62778f;margin:2px 0}
+.annotation-row{display:flex;flex-wrap:wrap;gap:6px 12px;padding:7px 0;border-bottom:1px solid #edf2f7;font-size:12px;color:#465b73}
+.annotation-row strong{min-width:38px}
+
+/* Prévia de centros CAD com escala apenas de exibição, nunca metrológica. */
+.photo svg .family-expected-ring{fill:none;stroke:#386ef6;stroke-width:2.8;stroke-dasharray:5 4;vector-effect:non-scaling-stroke}
+.photo svg .family-expected-center{fill:#386ef6;stroke:none}
+.family-preview p{margin:2px 0;line-height:1.5;font-size:12px;color:#476482}
+.family-select{display:flex;flex-direction:column;gap:7px;font-size:12px;color:#2d527e}
+.family-select select{max-width:500px;padding:9px;border:1px solid #c8d6ea;border-radius:7px;background:white;color:#284d7e}
+
+
+/* Diagnóstico no entorno do CAD: não sinaliza aprovação ou defeito. */
+.guided-results{display:flex;flex-direction:column;gap:9px;padding:12px;margin:5px 0;border:1px solid #d0dfef;border-radius:8px;background:#f6f9ff}
+.guided-results>strong{font-size:12px;color:#2a5988}
+.guided-region{display:flex;flex-direction:column;gap:5px;padding:9px 10px;border:1px solid #e0e9f3;border-radius:7px;background:#fff}
+.guided-region>b{font-size:12px;color:#244c7b}
+.guided-region>span{font-size:12px;color:#53667b;line-height:1.5}
+.guided-region>small{font-size:11px;color:#7b8594;line-height:1.5}
+
+
+/* Comparação manual dos 3 pontos com o CAD: análise de pixels, não erro de corte. */
+.manual-cad-review{background:#fff;border:1px dashed #9eb8dc;border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:6px}
+.manual-cad-review>strong{color:#28557a;font-size:12px}
+.manual-cad-review>p{margin:0;color:#536881;line-height:1.55;font-size:12px}
+
+
+.manual-cad-row{display:flex;flex-direction:column;gap:5px;padding:10px 8px;border-top:1px solid #dce8f3}
+.manual-cad-row>b{font-size:12px;color:#224f7d}
+.manual-cad-row>span{font-size:12px;color:#516a86;line-height:1.45}
+.manual-cad-row>.manual-cad-diagnosis{font-weight:700;color:#635122}
+
+/* Comparação de textura sem transformar percentis em certeza de vazadores. */
+.texture-compare{display:flex;flex-direction:column;gap:5px;background:#f1f6f9;border:1px solid #b9d1db;border-radius:8px;padding:9px;margin-top:6px}
+.texture-compare>strong{font-size:12px;color:#31526c}
+.texture-compare>span{font-size:12px;line-height:1.4;color:#446279}
+.texture-compare>small{font-size:11px;color:#657e91;line-height:1.45}
+
+
+/* O modo de validação preserva a diferença entre referência física humana
+   e detecção automática. Sem cor de aprovação/reprovação industrial. */
+.reference-validation,
+.reference-validation-results,
+.reference-validation-history{
+  display:flex;flex-direction:column;gap:10px;padding:14px;
+  border:1px solid #cfdded;border-radius:10px;background:#f9fbff;
+}
+.reference-title{display:flex;align-items:center;gap:10px;font-size:14px;color:#1f4778;cursor:pointer}
+.reference-title input,.validation-mark input{accent-color:#2763c8}
+.validation-mark{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;
+  gap:10px;padding:10px;background:#fff;border:1px solid #e0e8f4;border-radius:8px;font-size:12px}
+.validation-mark label{display:flex;align-items:center;gap:7px;cursor:pointer;color:#294c6f}
+.reference-validation-results strong,.reference-validation-history>strong{color:#24517c;font-size:13px}
+.reference-validation-results p,.reference-validation-history p{
+  color:#4c6279;font-size:12px;line-height:1.5;margin:0
+}
+.reference-row{display:flex;align-items:baseline;gap:12px;border-top:1px solid #dfe7f0;
+  padding-top:9px;font-size:12px;color:#395977}
+.reference-row b{min-width:38px;color:#25486d}
+.history-table-wrap{width:100%;overflow-x:auto}
+.reference-validation-history table{width:100%;border-collapse:collapse;font-size:12px;text-align:left}
+.reference-validation-history td,.reference-validation-history th{border-bottom:1px solid #e1eaf3;padding:9px;white-space:nowrap}
+.reference-validation-history th{color:#365675;font-weight:700}
+
+/* Estudo de descontinuidades de trama sem forma circular: sem indicador
+   de aprovação, taxa de acerto ou furo fisicamente confirmado. */
+.irregular-summary{display:flex;flex-direction:column;gap:10px;
+  padding:12px;margin:9px 0;border:1px solid #cad9e9;border-radius:8px;background:#f8fbfd}
+.irregular-summary>strong{font-size:12px;color:#244f76}
+.irregular-summary>p{font-size:12px;color:#526d82;line-height:1.5;margin:0}
+.irregular-result{display:flex;flex-direction:column;gap:6px;
+  background:white;border:1px solid #e0e8f2;padding:10px;border-radius:8px;
+  font-size:12px;color:#4c627e}
+.irregular-result>b{color:#24547d}
+.irregular-bands{display:flex;flex-wrap:wrap;gap:8px}
+.irregular-bands>span{font-size:11px;border:1px solid #dee6ee;border-radius:6px;
+  padding:5px;background:#f6f8fb;color:#50667d}

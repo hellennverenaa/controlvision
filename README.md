@@ -1,9 +1,362 @@
 # ControlVision
 
-Protótipo de inspeção geométrica por visão computacional para peças cortadas.
+> 🧭 **Roteiro vivo do projeto:** [PLANO_DESENVOLVIMENTO.md](PLANO_DESENVOLVIMENTO.md). Consulte antes de iniciar uma nova etapa e atualize-o junto com cada entrega.
 
-**Status: experimental. Não utilizar para aprovação ou liberação da produção.**
+**Protótipo experimental de inspeção geométrica de peças cortadas. NÃO HOMOLOGADO para liberar produção.**
 
-Stack prevista: Vue 3 + TypeScript; Python + FastAPI; ezdxf, Shapely e OpenCV. Banco de dados PostgreSQL, autenticação e infraestrutura corporativa serão integrados apenas após validação técnica.
+Sistema web que importa DXF e HPGL/PLT, identifica peças candidatas e seus contornos internos, permite selecionar uma peça pela lista ou clicando no desenho e analisa experimentalmente fotografias ou webcam. A classificação interna pode ser revista pelo operador.
 
-A implementação da primeira versão ficará disponível em uma branch de validação para revisão antes de entrar na main.
+## Tecnologias
+
+- Vue 3 + TypeScript + Vite no frontend.
+- Python + FastAPI, ezdxf, Shapely e OpenCV no backend.
+- PostgreSQL, auth corporativa, PM2 e API Gateway: integrações posteriores, após validação.
+
+## Executar localmente
+
+### Atalhos Linux para o dia a dia
+
+Depois da instalação inicial, abra **dois terminais**, ambos na raiz do projeto:
+
+    cd ~/Documentos/ambiente_dass/controlvision
+    npm run backend
+
+    # Em outro terminal, na mesma pasta:
+    cd ~/Documentos/ambiente_dass/controlvision
+    npm run frontend
+
+O script `npm run backend` utiliza o Python do próprio `backend/.venv`, inicia FastAPI/Uvicorn na porta 8000 e dispensa `source .venv/bin/activate`. O comando `npm run frontend` chama o Vite em `frontend`. Para interromper, use Ctrl+C em cada terminal.
+
+Se a pasta `backend/.venv` ainda não existir, faça uma única instalação:
+
+    cd backend
+    python3 -m venv .venv
+    .venv/bin/python -m pip install -r requirements.txt
+    cd ..
+
+Esses atalhos usam Bash e foram destinados ao desenvolvimento Linux local. Não configuram PostgreSQL, autenticação, PM2 ou infraestrutura corporativa.
+
+### Comandos manuais (também funcionam)
+
+Backend (Python 3.11 ou superior):
+
+    cd backend
+    python -m venv .venv
+    # Linux: source .venv/bin/activate
+    # Windows: .venv\Scripts\activate
+    pip install -r requirements.txt
+    python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+
+Frontend (Node 20+):
+
+    cd frontend
+    npm install
+    npm run dev
+
+Abrir http://localhost:5173; Vite encaminha chamadas /api ao FastAPI local.
+
+Testes automatizados:
+
+    cd backend
+    pip install pytest
+    python -m pytest -q
+
+## Roteiro de validação
+
+1. Importar um DXF com uma peça e outro com várias peças e numerações.
+2. Confirmar cada contorno no desenho e na lista de seleção.
+3. Verificar círculos e recortes internos; marcar provisoriamente como vazador, referência ou ignorar.
+4. Importar o HPGL equivalente e observar diferenças de agrupamento.
+5. Enviar uma imagem ou usar a webcam apenas para inspecionar a extração visual de contorno.
+
+
+## Fluxo guiado de teste (atualização)
+
+1. **Importar CAD** e escolher uma peça pela lista ou pelo desenho.
+2. **Conferir geometrias internas.** O programa destaca círculos com marcadores maiores, apenas para visualização. Um círculo interno recebe a sugestão de "possível vazador", mas a função precisa ser confirmada por alguém que conheça o molde.
+3. **Testar imagem.** Envie uma fotografia ou use a webcam, de preferência com uma peça realmente recortada, plana e em fundo contrastante. O contorno vermelho é somente o contorno detectado em pixels.
+4. **Comparação dimensional CAD x peça** ainda está indisponível: faltam alinhamento rígido, calibração, medição dos vazadores e testes metrológicos.
+
+Uma fotografia de **um contorno desenhado com caneta sobre uma folha de papel** não permite testar a identificação dos vazadores físicos, já que eles não estão recortados. Os contornos brutos encontrados pela segmentação incluem ruídos e não indicam quantidade de defeitos.
+
+Os dados de classificação da etapa 2 não são gravados, e a confirmação visual não autoriza uso industrial.
+
+## Etapas navegáveis e análise interna de imagem
+
+A interface agora separa as etapas em telas reais: **1 — Importar CAD**, **2 — Conferir candidatos internos**, **3 — Analisar fotografia**. As três primeiras etapas são clicáveis na navegação superior quando o CAD correspondente foi selecionado. Depois de confirmar os círculos no CAD, pressione **Continuar para Etapa 3**.
+
+Na Etapa 3 selecione o tipo de imagem:
+- **Desenho no papel:** procura pontos escuros aproximadamente circulares, mas não afirma que sejam vazadores físicos.
+- **Peça recortada com contraste:** procura pequenas aberturas claras no interior de uma região escura, preferencialmente com iluminação traseira.
+
+Os candidatos aparecem com contornos amarelos sobre a fotografia. O número de candidatos da foto e os vazadores confirmados no CAD são mostrados separadamente. **Igualdade de contagens não comprova posição, dimensão ou conformidade**. Ainda não há alinhamento CAD-fotografia nem medição em mm.
+
+Testes automatizados usam fotografias sintéticas: seis marcas sobre papel, seis aberturas sobre peça escura e ausência de furos. As condições reais podem gerar falsos negativos ou falsos positivos.
+
+## Prévia de correspondência CAD × imagem (experimental)
+
+Depois de confirmar as geometrias internas no CAD e abrir a Etapa 3, a API tenta sobrepor o contorno CAD à silhueta identificada na imagem e relacionar os centros dos vazadores confirmados com os pontos detectados na foto.
+
+- O contorno **azul tracejado** é uma projeção ilustrativa do CAD sobre a foto; o contorno **vermelho** é a detecção da foto; os círculos **amarelos** são candidatos da imagem; as linhas **verdes** indicam associações sugeridas.
+- Pontos esperados sem candidato e candidatos sem associação são apresentados separadamente. Isso **não indica furo ausente ou defeito**: a segmentação pode confundir rabiscos, sombras ou perspectiva.
+- O algoritmo utiliza rotação e translação e um **fator de escala calculado das áreas das silhuetas exclusivamente para visualização**. Não redimensiona o molde original nem fornece calibração metrológica. **Não usar o alinhamento automático para esconder diferenças dimensionais**.
+- Quando o alinhamento da silhueta tem qualidade baixa, associações automáticas são bloqueadas. O sistema ainda mostra a prévia e recomenda uma imagem melhor.
+- O algoritmo não corrige perspectiva nem espelha automaticamente a peça. A comparação dimensional em milímetros continua indisponível.
+
+Testes sintéticos cobrem diferentes rotações, um candidato extra e um vazador CAD não encontrado na fotografia. Necessitamos de ensaio real com peça correspondente ao DXF antes de declarar a correspondência validada.
+
+## Teste com várias numerações e peça sem tamanho conhecido
+
+Se o arquivo DXF ou HPGL contiver **mais de uma peça**, o sistema não escolhe automaticamente a primeira. Na Etapa 2, o operador pode selecionar **Não sei a numeração** para continuar sem definir um tamanho. Nesse modo, a Etapa 3 analisa somente a fotografia: **nenhuma geometria CAD é enviada à correspondência**. A plataforma não pode inferir o tamanho real em milímetros de uma imagem sem calibração, mesmo que os moldes tenham formas semelhantes.
+
+Na fotografia, escolha **Peça física cortada** e depois o contraste esperado: **peça escura/fundo claro** ou **peça clara/fundo mais escuro**. Se o algoritmo selecionar praticamente o fundo inteiro, tocar as bordas da captura ou selecionar uma região improvável, exibirá **Captura inconclusiva**, sem lista de vazadores nem sobreposição CAD. Este bloqueio é heurístico e não detecta todas as falhas possíveis.
+
+Um único arquivo com todas as numerações já é suficiente para nossos testes de **importação e seleção visual**. Identificação automática de numeração, máscara interativa/ROI e medição dimensional ficam para validação posterior. Não é necessário comprar câmera, medir a peça com régua ou configurar PostgreSQL agora.
+
+## Peça real clara sobre tecido azul e limite da análise percentual
+
+**Novo ensaio experimental:** a imagem de uma peça clara apoiada em tecido azul mostrou que a rotina anterior identificava parte do tecido como peça e devolvia falsos vazadores. No modo "Peça física" + "Peça clara, fundo mais escuro", o protótipo agora tenta isolar o material com características de cor (saturação baixa e luminosidade alta). Essa regra é específica e **não é garantida para todas as cores e texturas**.
+
+Os furos observados são muito pequenos para a resolução da imagem reduzida usada no ensaio. Mesmo com contorno externo identificado, os círculos internos podem não ser resolvidos: **zero candidatos na foto não comprova zero furos presentes**. É necessário preservar a resolução original da captura e, futuramente, validar óptica, iluminação e repetibilidade.
+
+### O que significa o percentual mostrado
+
+Quando uma referência CAD **específica** é selecionada e o ajuste visual da foto tem qualidade suficiente, a tela pode apresentar um **percentual experimental de diferença de forma**. O cálculo é 100 × (1 − área da interseção / área da união) das duas silhuetas após *normalização ilustrativa de escala e rotação*.
+
+Este percentual **NÃO é percentual de erro de corte, nem medida em mm, nem critério de aprovação**. O ajuste ilustrativo pode esconder diferenças uniformes de tamanho. Se a numeração for desconhecida, a captura inconclusiva ou o alinhamento for ruim, não há percentual confiável a exibir. Rotações da peça no plano não são tratadas como defeitos.
+
+A futura medição dimensional precisará da numeração/escala correta, calibração em mm no plano físico, controle de perspectiva e correspondência rígida sem redimensionar a referência para minimizar desvios.
+
+## Revisão manual de vazadores microscópicos (experimental)
+
+No teste de uma peça clara sobre tecido azul, o sistema identificou o contorno externo, mas retornou **0 vazadores automáticos**. Esse resultado significa apenas que a imagem não apresentou candidatos reconhecidos pelos filtros atuais; **não é evidência de ausência de furos**.
+
+Na **Etapa 3**, ao carregar ou capturar a fotografia, use **Ampliar fotografia** para revisar o material na maior área de tela disponível. Se conseguir distinguir visualmente os pontos, clique em **Marcar furinhos manualmente** e depois sobre cada posição na fotografia. O sistema desenhará marcadores **roxos**, separados dos candidatos **amarelos** detectados automaticamente. É possível desfazer/limpar essas anotações; as coordenadas são indicadas em pixels de imagem.
+
+As marcações são provisórias, não são gravadas no banco e **não entram na correspondência geométrica nem alteram as contagens automáticas**. Servem para identificar onde o algoritmo não conseguiu detectar um possível furo, antes de estudar detecção melhor e câmeras de maior resolução. Ampliar digitalmente não aumenta detalhe óptico.
+
+Se a numeração ainda é desconhecida, a interface informa por que não compara com um tamanho CAD selecionado ao acaso.
+
+## Inspeção assistida de furinhos muito pequenos
+
+Se o modo de peça física mostra **0 candidatos**, mas alguém vê furinhos, continue usando **Marcar furinhos manualmente** na Etapa 3 e em seguida clique **Analisar regiões marcadas**.
+
+A API `POST /api/vision/manual-regions` recebe a **fotografia original** (não a captura de tela), o tom da peça e as coordenadas inseridas pelo operador. Para cada ponto, examina brilho e saturação dentro da peça, compara com a vizinhança e indica **Contraste observado** ou **Inconclusivo**.
+
+**Atenção:** essas marcações são humanas, não detecções automáticas. Contraste também pode ser sujeira, pigmento, trama ou sombra. O relatório não confirma furos passantes, não compara o CAD e não avalia defeito. Um ponto inconclusivo **não significa furo ausente**. O fluxo é um instrumento de diagnóstico para melhorar depois o detector automático com material de teste real.
+
+Este teste é especialmente importante perto das bordas da peça, onde antigos filtros por área e raio mínimo rejeitavam pequenos furos.
+
+## Busca assistida em torno das marcações
+
+Depois do teste real com três marcações, foi observado contraste de intensidade de aproximadamente -1,5, 44 e 18 níveis exatamente sobre os cliques. Isso não permite confirmar furos.
+
+Na análise assistida, o sistema também pesquisa **pequenos sinais ópticos em um raio máximo de 11 pixels em torno de cada marcação**. Reporta localização sugerida, deslocamento e força do sinal local, separando-o do contraste medido no clique original. O algoritmo só procura locais situados dentro do contorno detectado; ainda pode destacar sujeira, textura, sombras e artefatos. Um sinal encontrado **NÃO confirma a existência de um vazador** e um sinal não encontrado **NÃO comprova sua ausência**.
+
+Esses sinais são usados apenas para diagnosticar falhas de detecção dos vazadores minúsculos. Não são associados automaticamente a uma numeração CAD, não são contabilizados como detecção automática e não alteram percentuais, medidas ou aceitação de peças. Nenhum dado de imagem proprietária está versionado neste repositório público.
+
+## Detecção automática exploratória de micropontos
+
+O detector de furos físicos possui **dois caminhos distintos** para peças claras sobre fundo contrastante:
+
+- **Círculos (amarelo):** contornos fechados detectados pela segmentação convencional.
+- **Micropontos (ciano):** componentes muito pequenos encontrados por diferença local entre imagem suavizada e fundo estimado, sem marcações manuais. A busca é limitada ao interior da silhueta (com margem de segurança), exige contraste acima do ruído e evita duplicar círculos já detectados.
+- **Pontos roxos:** posições fornecidas manualmente pelo operador, sem contar como detecção automática.
+
+**Aviso:** um microponto ciano pode ser furo real, sombra, mancha, fibra ou artefato da câmera. Não equivale a vazador confirmado, nem é usado na correspondência CAD ou na decisão de qualidade. O algoritmo pode deixar de encontrar furos de baixa resolução ou sugerir micropontos falsos. Os limiares são experimentais e ainda não foram validados com amostras reais rotuladas.
+
+O teste sintético verifica detecção de pontos de aproximadamente 1–2 pixels, superfícies lisas, ruído leve, pontos externos e ausência de duplicações. A fotografia enviada na conversa é uma captura de tela e não foi incorporada ao repositório público. Precisamos repetir com imagem original da câmera e conferir cada sugestão visual.
+
+## Resultado do teste em várias rotações (20/10/2026)
+
+Quatro capturas de uma mesma peça clara sobre tecido azul, em orientações diferentes, mostraram que a **segmentação do contorno externo permanece funcional**, mas a detecção óptica dos vazadores **não é repetível**:
+
+- Captura vertical: um candidato circular amarelo perto da borda, sem micropontos cianos.
+- Captura inclinada: três grupos de micropontos cianos.
+- Outra captura vertical: três grupos de micropontos cianos.
+- Captura inclinada com textura mais aparente: dezenas de micropontos cianos, com numerosos falsos candidatos.
+
+**Conclusão:** três candidatos em uma única imagem não equivalem a três vazadores verificados. A forte dependência da orientação/iluminação e da textura do material bloqueia a validação da detecção automática nesta etapa.
+
+O protótipo agora apresenta **"Detecção instável: excesso de sinais compatível com textura"** se houver muitos micropontos distribuídos pela área detectada. Nesse cenário, os marcadores cianos ficam inicialmente ocultos e podem ser revelados apenas para diagnóstico. A decisão é uma heurística de triagem, não uma regra universal; peças legítimas com muitos vazadores também poderão produzir um alerta, que deverá ser revisado.
+
+Para evoluir a técnica precisamos dos **arquivos originais das fotografias**, sem sobreposição vermelha, amarela ou ciana gerada pelo ControlVision. Capturas de tela com os overlays são ótimas para entender a interface, mas inadequadas para aferir rigorosamente o detector. As fotos proprietárias não devem ser enviadas ao repositório público sem autorização.
+
+## Validação das cinco fotografias sem overlays (20/10/2026)
+
+Recebemos cinco imagens da mesma peça clara em diferentes orientações, cada uma com **525 × 300 pixels**, sem as marcações desenhadas pela aplicação. O ensaio local do algoritmo anterior revelou dois problemas:
+
+- A máscara de peça clara por HSV podia escolher **piso/superfície clara conectada à borda** como componente externo e descartar a peça por ela aparecer aninhada na hierarquia de contornos (4 de 5 imagens do conjunto reproduziram o problema).
+- Quando a seleção ignora a profundidade da hierarquia, mas continua exigindo que o candidato não toque as margens e tenha área plausível, a **silhueta principal foi recuperada nas cinco imagens** desse teste local.
+- O detector de micropontos anterior **não recuperou os três sinais de forma estável nesses arquivos de 525 × 300 px**. Isso não contradiz resultados anteriores com capturas de maior resolução: são entradas diferentes.
+- Portanto, **não se deve reduzir indiscriminadamente os limiares para aumentar artificialmente a contagem**. A aplicação mostra aviso quando a imagem possui menos de 0,5 megapixel; essa faixa é um limiar experimental de alerta, não um requisito metrológico validado.
+
+O código foi corrigido para permitir que uma peça clara seja um contorno aninhado na imagem sem confundir a mesa clara conectada às bordas com a peça. Foram acrescentados testes sintéticos de fundo azul e margens brancas. Fotos reais não foram versionadas no repositório público.
+
+## Anotações versus detecção automática (revisão experimental)
+
+Em uma fotografia de teste, o operador anotou três posições (M01/M02/M03) e o detector indicou 23 candidatos circulares. A comparação por proximidade em pixels revelou **uma coincidência de aproximadamente 1 px (M03 ↔ I02)**; os candidatos mais próximos de M01 e M02 estavam a aproximadamente 479 e 485 px, respectivamente. Isso demonstra que acertar a contagem de candidatos isoladamente não comprova detecção correta.
+
+Após marcar pontos e clicar **Analisar regiões marcadas**, o relatório inclui uma **associação espacial um-para-um**, em raio experimental de 12 px, mostrando: candidato automático próximo de cada marcação, distância, marcações sem associação e candidatos não associados. Inclui tanto círculos clássicos como micropontos, mantendo seus tipos separados.
+
+O raio de 12 px serve apenas para comparar coordenadas de imagens e cliques. **Não é tolerância dimensional, nem prova de furo físico**, e uma anotação pode estar deslocada. Candidatos sem anotação não são necessariamente falsos positivos.
+
+Se todas as peças do arquivo CAD apresentam a mesma contagem de geometrias circulares e a fotografia oferece candidatos em quantidade muito superior (critério provisório: pelo menos 10 e 3 vezes o número CAD), a interface exibe alerta de **possível influência da textura**. Não deduz defeitos nem altera os resultados brutos.
+
+O estudo seguinte será restringir a busca de sinais à vizinhança das geometrias CAD projetadas para várias numerações, com revisão e sem determinação artificial de escala métrica.
+
+## Prévia de padrão CAD com numeração desconhecida
+
+Se o CAD contiver vários tamanhos e o operador selecionar **Não sei a numeração**, o backend pode avaliar **até 15 geometrias** como hipóteses de posição do contorno e das geometrias circulares internas. A Etapa 3 mostra as referências avaliadas e permite selecionar **uma referência apenas para visualização**, desenhando seus centros previstos com círculos azuis tracejados. Amarelo = círculo detectado na foto; ciano = microcontraste; roxo = anotação humana.
+
+Cada referência usa um fator de escala extraído da área das silhuetas **apenas para a projeção ilustrativa na fotografia**. Essa escala elimina as diferenças absolutas entre numerações: portanto, a comparação **não identifica tamanho, não mede corte, não calcula erro dimensional, nem determina conformidade**. Vários tamanhos podem parecer igualmente compatíveis. O sistema não altera o CAD original nem escolhe a numeração.
+
+Há um controle específico de quantos candidatos visuais estão próximos às posições projetadas, mas **proximidade não confirma vazador**; a malha pode produzir pequenos falsos sinais próximos por acaso. Sobreposições com ajuste de contorno baixo não devem ser usadas. É imprescindível validar esse caminho com peças físicas e referência verificada antes de qualquer conclusão industrial.
+
+## Teste visual CAD × foto com tamanho ainda desconhecido
+
+Na prévia da família CAD, o sistema apresenta agora **o contorno CAD em azul tracejado**, junto dos três centros CAD também azuis. O contorno **vermelho** continua sendo a silhueta segmentada da fotografia; os círculos **amarelos** são candidatos ópticos e não vazadores confirmados.
+
+Confira primeiro se o contorno azul realmente acompanha o vermelho. Se não acompanhar, o deslocamento dos centros azuis pode ser **erro de alinhamento**, e não problema com os vazadores da peça. Só depois examine as coincidências dos pontos. A interface também mostra a qualidade experimental do ajuste.
+
+A transformação utiliza escala **normalizada para visualização**, rotação e translação. Não representa medição dimensional e **não escolhe automaticamente a numeração**. Esta mudança melhora o diagnóstico da sobreposição, mas não declara o detector de vazadores validado.
+
+## Verificação visual com a peça em três orientações (21/10/2026)
+
+Foram observadas três capturas da peça real com overlays vermelhos (contorno da fotografia), azuis (contorno e centros projetados do CAD) e amarelos (candidatos do detector convencional). A silhueta CAD acompanha aproximadamente a fotografia nas três posições, com desvios locais visíveis, mas os candidatos amarelos continuam frequentemente concentrados em grupos que se parecem com a textura do tecido.
+
+Para facilitar a validação, quando o número de candidatos circulares supera fortemente os círculos presentes por peça no arquivo CAD, a interface **oculta os pontos amarelos inicialmente** e oferece um checkbox para exibi-los sem perdê-los. Assim, o operador pode comparar primeiro os dois contornos e depois examinar as suspeitas ópticas.
+
+A prévia da família também apresenta o **percentual de área de divergência entre as silhuetas normalizadas pela escala de exibição**. Esse é um índice **não metrológico**, que não mostra erro dimensional, não resolve a numeração da peça e pode mascarar diferenças de escala; a peça nunca deve ser aprovada com base nesse percentual. Quando o ajuste é ruim, o percentual permanece indisponível.
+
+## Diagnóstico óptico guiado pelas posições CAD (21/10/2026)
+
+Um teste com peça de malha clara mostrou alinhamento visual preliminar (9,1% de diferença **de área normalizada**, não erro dimensional), 15 candidatos ópticos globais e **0 de 3 associações CAD × candidatos**. A falta de associação significa apenas que o detector global não apresentou centros próximos dos projetados. Não significa vazador ausente.
+
+Na prévia de numeração desconhecida, o sistema agora calcula **uma investigação óptica local por círculo CAD projetado** para cada referência com ajuste de contorno não baixo. Usa pequenos recortes dos pixels **da própria foto**, compara contraste com a vizinhança e descreve o resultado como:
+
+- **Sinal suspeito:** uma pequena região contrasta com seu entorno, mas pode ser furo, fibra, pigmento ou sombra.
+- **Textura ambígua:** múltiplos sinais presentes, impedindo distinguir um furo.
+- **Inconclusivo:** não houve evidência local suficiente, o centro ficou fora da área, ou o contorno não permitiu análise segura.
+
+O raio de procura é **em pixels e experimental**, não uma tolerância dimensional. O alinhamento visual pode deslocar a posição projetada, e a inspeção localizada **não pode excluir vazadores deslocados ou extras**. Por isso a detecção global permanece visível no relatório e nenhuma marcação por CAD é somada à contagem de vazadores automaticamente confirmados.
+
+Cada tamanho pode mostrar um diagnóstico semelhante porque a transformação normaliza escala somente para sobreposição. **Não adivinhar numeração, não afirmar percentual de erro do corte e não aprovar a peça.** A técnica precisará de comparação com os três furos físicos conhecidos, imagens de maior fidelidade e, posteriormente, calibração óptica.
+
+## Diagnóstico de ROI e registro dos centros CAD (21/10/2026)
+
+Em uma imagem da lingueta, a prévia apresentou **23 candidatos circulares globais**, 1 de 3 centros CAD associado e **V01, V02 e V03 inconclusivos** (zero picos acima do filtro em regiões de 17 px). A divergência da sobreposição normalizada era 8,7%, que **não é percentual de erro de corte**.
+
+O relatório das regiões CAD foi ampliado para apresentar o **maior sinal de contraste local**, o **limiar que o filtro exigiu** e o **ruído estimado**. Isso permite distinguir uma região sem sinal acima do limiar de um detector que descartou informação por excesso de textura, sem diminuir automaticamente a sensibilidade.
+
+Para verificar erro de registro, o operador pode clicar manualmente nos três furinhos da **mesma fotografia analisada**. A prévia CAD mostrará as três distâncias (em pixels) entre as anotações humanas e os centros projetados, com associação um-para-um que minimiza a soma das distâncias. Também mostra quantas marcações estão além do raio de investigação local. Se estiverem fora, a busca guiada não é capaz de testar esses pontos corretamente. Essas distâncias dependem dos cliques humanos e do alinhamento ilustrativo, **não são erros dimensionais, não escolhem numeração e não comprovam furo**.
+
+Assim podemos separar duas hipóteses, antes de tornar o filtro mais sensível: (a) centro CAD projetado fora do furo anotado; (b) sinal de furo dentro da região, mas ocultado pelo ruído e pelo limiar. O detector global não foi limitado às ROIs e permanece independente para não esconder vazadores deslocados ou extras.
+
+## Revisão dos três marcadores em 21/10/2026
+
+Um ensaio com a peça de malha clara apresentou 15 círculos amarelos automáticos, três vazadores anotados pelo operador e três centros CAD de uma sobreposição visual (numeração ainda desconhecida).
+
+| Marca anotada | Candidato da fotografia | Distância | Centro CAD associado | Distância | Raio CAD |
+|---|---|---:|---|---:|---:|
+| M01 | I08 | 2,7 px | V01 | 25,8 px | 17 px |
+| M02 | Nenhum até 12 px | menor distância 118,3 px | V02 | 1,8 px | 17 px |
+| M03 | I04 | 2,7 px | V03 | 38,7 px | 17 px |
+
+**As anotações M01/M03 coincidem visualmente com dois candidatos globais**, mas seus centros CAD projetados caíram fora do raio de busca. M02 está dentro do raio CAD, porém o maior sinal local (64 níveis) foi inferior ao limiar do filtro (75,5 níveis). Portanto, há **dois tipos distintos de falha**: projeção geométrica e filtro óptico.
+
+A Etapa 3 agora combina essas verificações em um painel por marcação humana, com candidato automático mais próximo, distância até centro CAD, raio de investigação e hipótese de falha. O painel exige três marcações manuais, não modifica o contorno nem utiliza as anotações para ajustar o CAD. Esse cuidado evita mascarar um desvio real dos furos com um alinhamento forçado.
+
+O pareamento usa a soma mínima das distâncias para comparação visual; não identifica numeração nem valida vazadores e nunca deve ser usado para liberar peças. Critérios de proximidade em pixels e o percentual de área de silhuetas normalizadas **não constituem tolerância ou medição dimensional**.
+
+## Validação geométrica após 3 marcadores fora da região CAD (21/10/2026)
+
+Na última captura, as marcações humanas M01/M02/M03 ficaram a **20,8 / 21,9 / 33,7 pixels dos centros CAD** projetados, respectivamente, contra uma janela de investigação de 17 px. Dois marcadores apresentavam candidatos da imagem próximos, mas isso não implica erro dimensional: a projeção CAD ainda é ilustrativa, a numeração é desconhecida e os cliques humanos não são padrão metrológico.
+
+**Ajuste feito:** o alinhador já avaliava a rotação do contorno e estimava o centro pela média de amostras do perímetro, mas não otimizava pequenas translações depois da rotação. Agora aplica uma **busca local limitada de rotação e translação usando somente o contorno externo** após estabelecer o fator de escala de exibição. Não utiliza candidatos internos, centros do CAD, marcas humanas ou medidas em milímetros para favorecer artificialmente os furos.
+
+O fator de escala ilustrativo permanece **fixo** durante o refinamento; a projeção pode retornar ao encaixe anterior caso a diferença visual entre as silhuetas piore significativamente. A etapa 3 informa magnitude da translação e ajuste angular efetuados. Isso pode melhorar o encaixe sem garantir correção dos centros internos se houver diferença de modelagem, perspectiva, tecido deformado ou escala métrica errada.
+
+**Ainda não se pode usar a sobreposição para aprovar/reprovar peças.** O próximo teste deve verificar se o azul tracejado segue o vermelho após o refinamento e se as distâncias entre centros CAD e três marcas humanas caíram, permaneceram ou aumentaram. Não aceitar nenhuma melhoria fictícia apenas porque o software passou a associar três pontos.
+
+## Refinamento visual e inspeção de V02 (21/10/2026)
+
+Após refinamento rígido **somente por contorno externo**, a diferença visual normalizada caiu de cerca de 9,1% para **1,6%**, sem alteração adicional de escala. Na fotografia experimental, as três marcas humanas passaram a ficar a **0,4 / 2,6 / 0,6 pixels** dos centros CAD projetados, contra dezenas de pixels antes. Esses valores são **distâncias de tela em pixels**, não medidas de corte e não comprovam que os círculos CAD correspondam a furos físicos.
+
+O detector guiado apresentou:
+- V01: 80 níveis, limiar 68,1 → sinal suspeito.
+- V03: 99 níveis, limiar 97,8 → sinal suspeito, diferença de somente 1,2 nível.
+- V02: 60 níveis, limiar 76,5 → inconclusivo, falta de 16,5 níveis para o filtro atual.
+
+Para diagnosticar V02 sem diminuir a sensibilidade geral, cada ROI CAD agora registra o **pixel de maior contraste bruto, sua distância ao centro previsto, contraste medido exatamente no centro CAD e margem em relação ao limiar**. O pico bruto pode ser trama ou sombra; não vira candidato nem aumenta a contagem detectada. A análise não altera a detecção global independente, nem restringe a busca de defeitos extras.
+
+É preciso repetir o teste com a mesma fotografia e observar onde cai o pico bruto de V02. A resolução, o padrão da malha e a iluminação continuam limitando a capacidade de distinguir um furo real de microaberturas têxteis.
+
+## Estudo do contraste em relação à trama da mesma peça (21/10/2026)
+
+Neste ensaio o alinhamento ilustrativo do contorno ficou com 1,6% de diferença normalizada, 2 de 3 regiões apresentaram picos de contraste e a terceira (V02) permaneceu inconclusiva. Os centros do CAD estavam próximos dos três cliques humanos, então reduzir o limiar da câmera de modo global produziria falsos candidatos na trama.
+
+Foram confrontados os **arquivos originais da peça enviados na conversa**, sem overlays, com as anotações e as diferenças ópticas relatadas. Em análises locais exploratórias, V01 e V03 produziram picos de contraste muito acima das janelas comparáveis de tecido, enquanto V02 produziu picos semelhantes aos das microaberturas da malha. As fotografias **não foram adicionadas ao repositório público**.
+
+Agora o backend compara, em cada centro CAD projetado, o contraste máximo em uma janela de **8 pixels de raio** com centenas de janelas de controle situadas entre 35 e 115 pixels no tecido da mesma peça, inteiramente dentro do contorno e afastadas dos centros CAD. Informa mediana, percentil 90 da referência, margem e percentil empírico. Classifica somente **destaque de contraste** frente à textura, nunca presença/ausência de vazador. Uma janela lisa pode aparecer artificialmente no 100º percentil; por isso o destaque exige também intensidade absoluta e margem.
+
+Esses percentis **não são probabilidade de acerto, erro de peça, nem nível de confiança industrial**. Algumas regiões podem não ter controles suficientes. O método continua dependente da projeção visual dos centros e **não dispensa a detecção global** de eventuais furos deslocados ou extras.
+
+A identificação automática confiável dos vazadores depende de um estudo maior por material e condições de captura, possivelmente com iluminação por transmissão para separar os furos reais das aberturas da malha. As tolerâncias e a calibração métrica continuam adiadas.
+
+## Diagnóstico de contraste e associação limítrofe (21/10/2026)
+
+Nova fotografia da peça de malha: a sobreposição CAD × silhueta mantém divergência visual normalizada de **1,8%**; os três cliques humanos estão a no máximo **5,5 px** de seus centros CAD ilustrativos. Entretanto, a detecção global retornou **23 candidatos circulares** (muitos sobre a trama), **0 de 3** anotações com candidatos dentro do raio experimental de 12 px e pico local guiado por CAD não conclusivo em V02 e V03.
+
+A comparação de textura mostrou V01 com pico **78** frente ao percentil 90 de **58** (+20 níveis, sinal óptico incomum), V03 com pico **55** frente a **59** (-4), e V02 com pico **48** frente a **63** (-15). Essas janelas de textura usam raio de 8 px, ao passo que a investigação de limiar usa 17 px; **os máximos dos dois métodos não são diretamente comparáveis**. Os percentis não são probabilidade de furo verdadeiro.
+
+Na anotação M03 o candidato I01 ficou a **12,5 px** do clique: apenas **0,5 px acima** do raio de associação configurado. A interface agora indica explicitamente uma **faixa limítrofe entre 12 e 16 px**, sem somar esses casos à contagem de associações e sem mudar o algoritmo de detecção.
+
+A fotografia original correspondente foi examinada em sua resolução de 960 × 1280 px. O contraste cromático azul/branco no entorno dos centros não mostrou separação consistente suficiente para justificar um novo detector de cor nesta captura. A trava de resultados inconclusivos permanece: não ajustar a sensibilidade global apenas para encontrar exatamente três supostos vazadores. Antes de validação industrial, exigir rótulos físicos confiáveis e condições de iluminação mais reprodutíveis.
+
+## Modo de Validação de Vazadores — Etapa 3 (protótipo)
+
+Na fotografia de uma **peça real**, marque os furos com o botão **Marcar furinhos manualmente**. Habilite o **Modo de validação dos vazadores (laboratório)** e, após inspecionar fisicamente a peça, confirme individualmente os pontos em que o vazador realmente existe. Essas declarações são referências humanas aproximadas e **não entram no detector automático**. A numeração pode permanecer desconhecida.
+
+Clique **Analisar regiões marcadas**. O resultado experimental apresenta, apenas para os furos físicos confirmados pelo operador:
+
+- Quantos pontos têm **um candidato automático real a até 12 pixels**, com associação um-para-um.
+- Quantos estão **sem candidato associado** (possível falha do detector, **não** ausência de furo).
+- A **taxa de recuperação deste conjunto de pontos físicos marcados**: encontrados / confirmados × 100. Isso **não é** percentual de qualidade da peça, precisão industrial nem medida dimensional.
+- Quantos candidatos automáticos permanecem **não revisados**. Eles não são contados como falsos positivos automaticamente, pois a fotografia pode conter furos adicionais não marcados.
+
+O modo **nunca conta pontos roxos, cliques manuais ou picos exploratórios da busca guiada por CAD como detecções automáticas**. Sem confirmações físicas, não calcula taxa. Um candidato não pode ser contabilizado em duas referências.
+
+Para comparar orientações, clique **Registrar resultado desta fotografia na sessão** depois da análise. Envie a próxima fotografia da **mesma peça física** e repita as marcações e confirmações: uma tabela exibirá os ensaios lado a lado. Análises repetidas do mesmo arquivo substituem a linha anterior. Os registros existem **somente na memória da página**: ao recarregar, mudar de modelo ou encerrar a sessão, não há persistência. Não inclui fotos nem dados sensíveis no repositório. O módulo não está conectado a PostgreSQL/infraestrutura corporativa nesta fase.
+
+Este modo é **assistido pelo operador e experimental**. Os testes demonstram associação em pixels, não homologia geométrica medida. Não identifica tamanho nem fornece erro em milímetros, e não aprova/reprova nenhuma peça de produção. A associação de 12 px é apenas um critério exploratório, que pode variar de efeito conforme resolução/ângulo/câmera: resultados entre fotografias só podem ser interpretados com essas diferenças em mente.
+
+## Detector experimental de alterações irregulares na trama (21/10/2026)
+
+Para avançar além dos círculos, a Etapa 3 agora inclui, por **cada centro CAD projetado**, uma pesquisa óptica **independente da forma circular**. O backend aplica *black-hat* morfológico em três escalas (kernels elípticos de **5, 9 e 15 px**) dentro de um pequeno recorte da fotografia original. Analisa manchas/traços alongados e outras variações escuras, sem impor critérios de circularidade do OpenCV. A região central de 7 px é confrontada com janelas de controle equivalentes da própria malha, situadas no anel de 34 a 108 px e sem sobrepor os demais centros CAD.
+
+Cada escala apresenta pico óptico, **percentil 95 da trama**, diferença e informação sobre contraste incomum (limites experimentais, não homologados). Os resultados possíveis são **sinal incomum**, **sem destaque** ou **inconclusivo**. **Nenhum desses estados confirma vazador ou ausência**, e nenhum sinal da análise nova entra na contagem amarela de círculos, no detector global, nas associações físicas ou na taxa de recuperação do Modo de Validação dos Vazadores. Essa separação evita aumentar artificialmente a taxa de detecção quando se pesquisa apenas nas posições esperadas do CAD.
+
+A análise está disponível para referências CAD que tenham sobreposição de contorno minimamente aproveitável; suas coordenadas continuam sendo **pixels com escala normalizada para visualização**, sem medição dimensional, numeração inferida nem avaliação de conformidade. Nenhuma imagem real foi incorporada ao repositório.
+
+Testes automatizados incluem: malha com microaberturas regulares, adição de uma **fenda escura alongada** à malha, rotação da fotografia e centros fora da peça. Eles verificam o funcionamento técnico, não estabelecem sensibilidade/especificidade industriais ou validação em todos os materiais. A imagem do teste atual tem três vazadores fisicamente confirmados, mas a confirmação humana **não foi usada para alterar o algoritmo nem seus limiares**.
+
+O próximo passo após conferir os resultados na mesma foto e em orientações distintas é avaliar com o operador se os sinais de V01, V02 e V03 têm estabilidade, mantendo a busca de possíveis furos deslocados ou extras em separado. Se V02 continuar invisível, é um resultado inconclusivo legítimo; poderá exigir nova técnica óptica ou iluminação por transmissão, que ficou para um experimento posterior.
+
+## Limites conhecidos
+
+- Nenhuma aprovação/reprovação automática de produção.
+- Sem calibração óptica nem comparação CAD x fotografia em milímetros.
+- Sem tolerâncias definidas ou metrologia validada.
+- O importador pode gerar candidatos falsos. Todos devem ser revisados.
+- Camadas do DXF não são usadas como classificação definitiva de contorno e furo.
+- DXFs podem não declarar unidade de medida; a escala HPGL usada é hipótese de 40 unidades/mm.
+- O upload não persiste no servidor; classificações não persistem após recarregar a página.
+- Os CADs reais da fábrica NÃO foram colocados no repositório público.
+- Limite experimental de 20 MB por CAD e 15 MB por fotografia.
+
+Consulte docs/VALIDACAO.md.
+
+## Crédito / licenças
+
+Implementação nova; o projeto SeAMKedu/dxf_contour_comparer foi consultado como referência, mas não teve seu código copiado por ausência de licença explícita. Respeitar licenças das dependências.
