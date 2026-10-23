@@ -1,7 +1,7 @@
 # PLANO DE DESENVOLVIMENTO — ControlVision
 
 > **Documento vivo e fonte principal de acompanhamento do projeto.**  
-> Atualizado em: **23/10/2026** · Versão do plano: **1.1**  
+> Atualizado em: **23/10/2026** · Versão do plano: **1.2**  
 > Branch de trabalho: `feat/prototipo-validacao` · Estado: **PROTÓTIPO EXPERIMENTAL — NÃO LIBERA PRODUÇÃO**
 >
 > **Regra de continuidade:** antes de iniciar uma alteração, ler a seção **"Onde estamos agora"**; depois de concluir uma entrega, atualizar as caixas de seleção, as evidências, a data e o histórico deste arquivo **no mesmo conjunto de alterações do código**. Não declarar etapas concluídas apenas porque o código foi escrito: exigir teste e revisão dos resultados.
@@ -28,13 +28,13 @@ Construir um sistema de inspeção visual de componentes cortados para calçados
 
 ## 2. Onde estamos agora
 
-**Fase atual: ETAPA 1 — contrato de segmentação v1 implementado; preparar inferência de IA isolada.**  
-**Próxima ação concreta: E1.3** — integrar um executor de IA **opcional e isolado** com indisponibilidade controlada quando bibliotecas/modelos/pesos não estiverem instalados. Não ativar SAM 2 por padrão nem substituir o OpenCV.
+**Fase atual: ETAPA 1 — E1.1, E1.2 e E1.3 implementadas e verificadas por CI.**  
+**Próxima ação concreta: E1.4** — exibir **máscaras OpenCV e SAM 2 lado a lado no Vue**, inclusive estados de IA indisponível/inconclusiva, preservando a análise clássica. **Inferência com pesos SAM 2 reais ainda não foi executada**; sua avaliação continua prevista na Etapa 2.
 
 | Etapa | Tema | Estado | Condição para avançar |
 |---|---|---|---|
 | 0 | Base existente do ControlVision | ✅ Base implementada, **não homologada** | Testes de regressão existentes preservados |
-| 1 | Preparação para IA + baseline do OpenCV | 🚧 **EM EXECUÇÃO (E1.1 e E1.2 verificadas)** | Comparação reproduzível definida |
+| 1 | Preparação para IA + baseline do OpenCV | 🚧 **EM EXECUÇÃO (E1.1–E1.3 verificadas)** | Comparação reproduzível definida |
 | 2 | Testar SAM 2 pré-treinado | ⬜ Pendente | Avaliação documentada contra OpenCV |
 | 3 | Preparar conjunto privado de imagens anotadas | ⬜ Pendente | Imagens e máscaras revisadas + divisão por peça física |
 | 4 | Treinar e avaliar U-Net, **se justificado** | ⬜ Condicional | Melhoria demonstrada em fotos nunca vistas |
@@ -71,14 +71,14 @@ Construir um sistema de inspeção visual de componentes cortados para calçados
 
 - [x] E1.1 Definir um contrato de saída para segmentação (máscara binária, largura/altura, método, tempo de execução, avisos), independentemente do algoritmo. **Contrato v1 em `backend/app/segmentation_contract.py` e `docs/SEGMENTACAO_CONTRATO.md`; máscara PNG binária validada e endpoint opt-in.**
 - [x] E1.2 Preservar OpenCV como caminho padrão e manter o fluxo atual totalmente funcional. **Rotas antigas preservadas; regressão e CI de backend/frontend aprovados.**
-- [ ] E1.3 Criar módulo experimental isolado no backend para executar inferência de IA, com falha controlada quando modelo/pesos não estiverem instalados.
+- [x] E1.3 Criar módulo experimental **isolado do fluxo padrão no código** para inferência SAM 2 opt-in, com falha controlada quando modelo/pesos não estiverem instalados. **`backend/app/sam2_optional.py`, rota experimental, testes de indisponibilidade/máscara simulada e CI aprovados.** Isolamento é por módulo + thread, **não por processo**; pesos reais não testados.
 - [ ] E1.4 Preparar visualização **lado a lado** da máscara OpenCV × máscara IA (sem substituir a referência automaticamente).
 - [ ] E1.5 Criar testes sintéticos de contrato, integração, ausência de pesos e regressão.
 - [ ] E1.6 Definir protocolo simples de comparação: IoU, Dice, erro de borda, tempo por imagem e falhas de segmentação.
 
 **Entregável:** aplicação atual preservada + interface/API para ensaio comparativo, inicialmente sem promessas de melhor desempenho.
 
-**Parcial em 23/10/2026:** E1.1 e E1.2 implementadas/testadas. `POST /api/vision/segmentation/preview` disponibiliza baseline de silhueta **externa** em máscara PNG/base64 (`schema_version=1.0`, `method=opencv_baseline`); `method=sam2` ainda retorna **422**, sem execução de IA. O baseline preenche o polígono aproximado já emitido pelo OpenCV, não é a máscara bruta original e não identifica vazadores. Fonte: `docs/SEGMENTACAO_CONTRATO.md`. **E1.5 ainda pendente**: os testes atuais cobrem contrato, rota e regressão; faltam casos de modelo/pesos ausentes após E1.3. Máscaras humanas comparativas, métricas reais e testes com fotografias reais: **não medidos**.
+**Parcial em 23/10/2026 (E1.1–E1.3):** `POST /api/vision/segmentation/preview` suporta `method=opencv` e `method=sam2`. OpenCV continua padrão; SAM 2 só roda se `CONTROLVISION_SAM2_ENABLED=1`, variante válida, checkpoint local e bibliotecas disponíveis. Se não estiver habilitado, retorna contrato v1 com **`status=indisponivel`**, sem máscara nem fallback silencioso. Um prompt de caixa vem do **contorno OpenCV** (IA ainda não independente). Executa em thread de trabalho com lock, não em processo isolado. CI backend/frontend aprovado, com testes simulados de máscara, pesos ausentes, dependências e regressão. **Nenhum modelo real instalado/executado, fotografia real avaliada ou métrica de qualidade medida.** Documentação: `docs/SEGMENTACAO_CONTRATO.md` e `docs/SAM2_EXECUCAO_EXPERIMENTAL.md`. **E1.5 ainda pendente** até completar testes de interface e ensaios posteriores.
 
 **Para encerrar:** testes passando e comparação reproduzível; nenhum aumento não explicado de falhas no fluxo atual.
 
@@ -189,7 +189,8 @@ Adicionar uma linha por rodada relevante. Se não houver dados, escrever **"não
 | 21/10/2026 | Lingueta QUEST 7; 3 furos físicos declarados pelo operador | OpenCV + CAD + anotações | Relatório de uma captura: **2/3** com candidato próximo; **13** candidatos sem associação; V02 ainda inconclusivo | Base anterior documentada no README; **não é métrica industrial** |
 | 21/10/2026 | Sinais irregulares guiados pelo CAD | *Black-hat* multiescala | V01 com contraste incomum; V02 e V03 sem destaque suficiente | Manter como diagnóstico separado da detecção global |
 | 22/10/2026 | Planejamento de IA | Revisão de arquitetura | Adotar abordagem **OpenCV baseline → SAM 2 → dataset privado → U-Net condicional** | E1.1 executada em 23/10; **próxima: E1.3** |
-| 23/10/2026 | Segmentação v1, só OpenCV | Máscara PNG/base64 com dimensões, contorno, método, tempo e avisos; endpoint opcional | Backend e frontend aprovados no GitHub Actions; **nenhuma imagem real testada**; **nenhuma IA executada** | [CI](https://github.com/hellennverenaa/controlvision/actions/runs/39945290274); `backend/tests/test_segmentation_contract.py`; **próxima: E1.3** |
+| 23/10/2026 | Segmentação v1, só OpenCV | Máscara PNG/base64 com dimensões, contorno, método, tempo e avisos; endpoint opcional | Backend e frontend aprovados no GitHub Actions; **nenhuma imagem real testada**; **nenhuma IA executada** | [CI](https://github.com/hellennverenaa/controlvision/actions/runs/39945290274); `backend/tests/test_segmentation_contract.py`; E1.1/E1.2 concluídas |
+| 23/10/2026 | SAM 2 opt-in (E1.3) | Executor de inferência opcional em thread, prompt de caixa do OpenCV, máscaras simuladas para testar integração | Backend e frontend aprovados; sem instalação de modelo e sem validação óptica real; ausências retornam `indisponivel` | [CI](https://github.com/hellennverenaa/controlvision/actions/runs/39947241641); `backend/tests/test_sam2_optional.py`; **próxima: E1.4** |
 
 **Modelo para novos registros:** `AAAA-MM-DD | conjunto/fotos e quantidade de peças físicas | método/versão | métricas + casos falhos | commit/PR/teste + decisão`.
 
@@ -226,10 +227,11 @@ Adicionar uma linha por rodada relevante. Se não houver dados, escrever **"não
 | Data | Alteração | Status |
 |---|---|---|
 | 22/10/2026 | Criação do plano mestre na raiz; consolidada base atual e roteiro de IA até operação industrial | Plano inicial — Etapa 1 próxima |
-| 23/10/2026 | Contrato único de máscaras v1, baseline OpenCV isolado, rota experimental e testes; E1.1/E1.2 concluídas após CI verde | Etapa 1 em execução; E1.3 próxima |
+| 23/10/2026 | Contrato único de máscaras v1, baseline OpenCV isolado, rota experimental e testes; E1.1/E1.2 concluídas após CI verde | Etapa 1 em execução |
+| 23/10/2026 | E1.3: executor SAM 2 opt-in, sem downloads/dependências novas no serviço padrão, testes de indisponibilidade e predição simulada; CI aprovado | **E1.3 concluída no código; E1.4 próxima** |
 
 ---
 
 **Referências dentro do repositório:** `README.md` (estado e execução do protótipo), `docs/VALIDACAO.md` (matriz de validação), `backend/app/vision.py` (baseline OpenCV), `backend/app/matching.py` e `backend/app/family_matching.py` (correspondência CAD), `backend/app/texture_anomalies.py` (análise óptica exploratória).
 
-**Próximo item obrigatório: E1.3 — executor opcional de IA com falha controlada quando não instalado.**
+**Próximo item obrigatório: E1.4 — visualização lado a lado de máscaras OpenCV × SAM 2, com estados indisponível/inconclusivo.**
