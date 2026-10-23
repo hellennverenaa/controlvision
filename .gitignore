@@ -16,3 +16,12 @@ __pycache__/
 *.jpg
 *.jpeg
 samples/private/
+
+# Modelos e datasets locais da fábrica (NÃO versionar pesos/imagens)
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+backend/models/
+models/private/
+datasets/private/
