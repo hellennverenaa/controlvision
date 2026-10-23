@@ -116,11 +116,11 @@ def test_optional_endpoint_rejects_unavailable_model_explicitly():
 
 def test_optional_endpoint_rejects_invalid_image():
     with pytest.raises(HTTPException) as error:
-        asyncio.run(segmentation_preview(file=_upload(raw=b"not image")))
+        asyncio.run(segmentation_preview(file=_upload(raw=b"not image"), method="opencv", mode="holes", piece_tone="light"))
     assert error.value.status_code == 422
 
 
 def test_optional_endpoint_rejects_oversized_image():
     with pytest.raises(HTTPException) as error:
-        asyncio.run(segmentation_preview(file=_upload(raw=b"x" * 15_000_001)))
+        asyncio.run(segmentation_preview(file=_upload(raw=b"x" * 15_000_001), method="opencv", mode="holes", piece_tone="light"))
     assert error.value.status_code == 413
