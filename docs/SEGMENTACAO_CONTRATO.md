@@ -1,6 +1,6 @@
 # Contrato de segmentação v1 — ControlVision (E1.1)
 
-**Estado:** baseline OpenCV funcional para ensaio. **SAM 2 e U-Net ainda não estão instalados nem executados.**
+**Estado:** baseline OpenCV funcional + **executor opcional SAM 2 conectado (E1.3)**. Dependências e pesos **não são instalados automaticamente**, e **não houve execução real do modelo nem avaliação de imagens reais**. U-Net ainda não implementada.
 Este contrato **não altera** as rotas existentes de inspeção `/api/vision/preview`
 e `/api/vision/manual-regions`.
 
@@ -18,12 +18,11 @@ autoriza conclusão de conformidade, medida em milímetros ou identificação de
 | Campo | Valor | Padrão |
 |---|---|---|
 | `file` | Fotografia JPG/PNG válida (até 15 MB) | obrigatório |
-| `method` | `opencv` | `opencv` |
+| `method` | `opencv` ou `sam2` | `opencv` |
 | `mode` | `holes` ou `marks` | `holes` |
 | `piece_tone` | `light` ou `dark` | `light` |
 
-Qualquer `method=sam2` solicitado agora retorna **HTTP 422** indicando
-indisponibilidade. **Nunca afirma ter usado IA, nem faz fallback silencioso.**
+`method=sam2` chama somente o executor opcional. Como SAM 2 permanece desativado por padrão, a resposta é **HTTP 200 com `status=indisponivel`**, `mask_png_base64=null`, `method=sam2_optional` e aviso explícito. Para ativação local, requer flag, pesos e dependências; sem eles, segue indisponível. Métodos desconhecidos retornam **HTTP 422**. Não há fallback silencioso para OpenCV. Ver `docs/SAM2_EXECUCAO_EXPERIMENTAL.md`.
 
 ## JSON de saída
 
@@ -92,9 +91,9 @@ fotos reais, máscaras proprietárias nem pesos treinados no GitHub público.**
   serialização PNG, captura inconclusiva, validação de contrato, endpoint
   experimental e regressão do detector atual.
 - **E1.2:** preservar OpenCV como padrão; nenhuma rota anterior alterada.
-- **E1.3:** implementar execução isolada de IA, com indisponibilidade controlada.
-- **E1.4:** comparar máscaras lado a lado no Vue.
-- **E1.5:** complementar testes com pesos ausentes e fluxo de IA.
+- **E1.3 (conectada):** executor de IA opt-in em `backend/app/sam2_optional.py`. O SAM 2 utiliza **uma caixa derivada do contorno OpenCV** como prompt; logo a comparação futura **não será independente**. A execução ocorre em uma thread de trabalho da API, mas não em um processo separado; isolamento de processo ainda não foi implementado. A evidência de execução com pesos reais permanece pendente para E2.
+- **E1.4:** comparar máscaras lado a lado no Vue (ainda não implementado).
+- **E1.5:** testes de configuração, pesos ausentes, dependências e máscaras simuladas adicionados (`backend/tests/test_sam2_optional.py`); a etapa ampla permanece pendente até o ensaio com o frontend e pesos reais.
 - **E1.6:** definir protocolo IoU/Dice, erro de borda, latência e falhas
   com máscaras humanas revisadas.
 
