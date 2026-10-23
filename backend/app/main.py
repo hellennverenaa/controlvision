@@ -4,10 +4,12 @@ import json
 import numpy as np
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.concurrency import run_in_threadpool
 
 from .geometry import read_cad
 from .vision import analyze_image
 from .segmentation_contract import segment_opencv_baseline
+from .sam2_optional import segment_sam2_optional
 from .microholes import inspect_marked_regions
 from .annotation_comparison import compare_annotations
 from .reference_validation import validate_confirmed_holes
@@ -48,13 +50,13 @@ async def segmentation_preview(
     mode: str = Form("holes"),
     piece_tone: str = Form("light"),
 ):
-    """Endpoint opt-in para comparar máscaras: não modifica /api/vision/preview.
+    """Endpoint opt-in para OpenCV e SAM 2, sem alterar inspeção atual.
 
-    A IA será conectada em outra etapa. Método inexistente é rejeitado
-    explicitamente, não é substituído silenciosamente por OpenCV.
+    SAM 2 é DESATIVADO por padrão. Sem pesos/dependências, retorna contrato
+    com status indisponivel; nunca disfarça OpenCV como resultado de IA.
     """
-    if method != "opencv":
-        raise HTTPException(422, "Método ainda indisponível: use opencv.")
+    if method not in ("opencv", "sam2"):
+        raise HTTPException(422, "Método inválido: escolha opencv ou sam2.")
     if mode not in ("marks", "holes") or piece_tone not in ("dark", "light"):
         raise HTTPException(422, "Modo ou tom inválido.")
     raw = await file.read(15_000_001)
@@ -64,6 +66,11 @@ async def segmentation_preview(
     if image is None:
         raise HTTPException(422, "Imagem inválida.")
     try:
+        if method == "sam2":
+            # Inferência pesada nunca bloqueia o loop assíncrono principal.
+            return await run_in_threadpool(
+                segment_sam2_optional, image, mode=mode, piece_tone=piece_tone
+            )
         return segment_opencv_baseline(image, mode=mode, piece_tone=piece_tone)
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
