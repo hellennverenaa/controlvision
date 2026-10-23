@@ -107,11 +107,26 @@ def test_optional_endpoint_returns_same_contract_without_changing_main_route():
     assert res["method"] == "opencv_baseline"
 
 
-def test_optional_endpoint_rejects_unavailable_model_explicitly():
+def test_optional_endpoint_reports_sam2_unavailable_without_fallback(monkeypatch):
+    monkeypatch.delenv("CONTROLVISION_SAM2_ENABLED", raising=False)
+    result = asyncio.run(segmentation_preview(
+        file=_upload(photo_with_light_piece()),
+        method="sam2", mode="holes", piece_tone="light",
+    ))
+    assert result["status"] == "indisponivel"
+    assert result["method"] == "sam2_optional"
+    assert result["mask_png_base64"] is None
+    assert result["contour_px"] == []
+    assert result["prompt_used"] is False
+
+
+def test_optional_endpoint_rejects_unknown_method():
     with pytest.raises(HTTPException) as error:
-        asyncio.run(segmentation_preview(file=_upload(raw=b"ignored"), method="sam2"))
+        asyncio.run(segmentation_preview(
+            file=_upload(raw=b"ignored"), method="inventado",
+            mode="holes", piece_tone="light",
+        ))
     assert error.value.status_code == 422
-    assert "indisponível" in error.value.detail
 
 
 def test_optional_endpoint_rejects_invalid_image():
