@@ -236,3 +236,22 @@ bibliotecas de IA; não indica que o Python 3.14 esteja incorreto.
 
 **E2.1 não substitui E2.2**: preparação verificada por documentação e
 testes sintéticos não é evidência de segmentação com SAM 2 real.
+
+
+## Ocorrência E2.2 — tentativa de instalar uv com Snap (03/11/2026)
+
+**Relato do operador (ainda sem instalação bem-sucedida):** `uv --version` retornou comando não encontrado. Uma tentativa de `sudo snap install astral-uv` apresentou inicialmente erro de autenticação de `sudo` e, nas tentativas seguintes, a mensagem de que o pacote Snap exige `classic confinement` (`--classic`). **Não há confirmação de instalação do uv via Snap.**
+
+**Decisão:** não ampliar privilégios do pacote Snap apenas para avançar nesta etapa; preferir o instalador standalone oficial da Astral no escopo do usuário, como já previsto neste guia. Conferir o script antes de executá-lo caso a política local exija revisão:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | less
+# Após conferência do instalador oficial:
+curl -LsSf https://astral.sh/uv/install.sh | sh
+export PATH="$HOME/.local/bin:$PATH"
+uv --version
+```
+
+Fonte: https://docs.astral.sh/uv/getting-started/installation/ . O instalador baixa código externo; usar somente após confiar na origem/revisar o conteúdo. Caso `curl` falhe, interromper e registrar o erro, sem recorrer automaticamente a `sudo` ou `--classic`.
+
+**Critério seguinte, ainda não atendido:** confirmar versão de `uv` no computador; só então instalar Python 3.12 e criar `sam2-lab/.venv`. **E2.2 continua pendente.**
