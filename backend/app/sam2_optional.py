@@ -16,15 +16,13 @@ import cv2
 import numpy as np
 
 from .segmentation_contract import build_segmentation_result
+from .sam2_preflight import SAM2_VARIANTS
 from .vision import analyze_image
 
 
-# Nomes de configurações da distribuição oficial facebookresearch/sam2.
+# Fonte única para o pareamento oficial variante/configuração/checkpoint.
 MODEL_CONFIGS = {
-    "tiny": "configs/sam2.1/sam2.1_hiera_t.yaml",
-    "small": "configs/sam2.1/sam2.1_hiera_s.yaml",
-    "base_plus": "configs/sam2.1/sam2.1_hiera_b+.yaml",
-    "large": "configs/sam2.1/sam2.1_hiera_l.yaml",
+    variant: details["config"] for variant, details in SAM2_VARIANTS.items()
 }
 _PREDICT_LOCK = Lock()
 
@@ -111,6 +109,11 @@ def segment_sam2_optional(image: np.ndarray, *, mode: str = "holes",
         return _response(
             image, started, status="indisponivel",
             reason="Checkpoint SAM 2 não configurado ou inexistente no computador."
+        )
+    if Path(checkpoint).name != SAM2_VARIANTS[variant]["checkpoint"]:
+        return _response(
+            image, started, status="indisponivel",
+            reason="Nome do checkpoint não corresponde à variante SAM 2.1 selecionada."
         )
     device = os.getenv("CONTROLVISION_SAM2_DEVICE", "cpu").lower()
     if device not in ("cpu", "cuda"):
