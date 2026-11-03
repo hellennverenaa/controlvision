@@ -227,3 +227,23 @@
   .segmentation-compare-grid {grid-template-columns:1fr}
   .segmentation-image-frame,.segmentation-image-placeholder {height:260px}
 }
+
+
+/* E1.6 — benchmark de silhuetas apenas com máscara humana revisada. */
+.segmentation-evaluation {
+  display:flex; flex-direction:column; gap:11px; padding:16px; margin-top:8px;
+  background:#eef5fa; border:1px solid #bfd4e4; border-radius:10px;
+}
+.segmentation-evaluation h3 {font-size:14px;color:#1b4769;margin:0}
+.segmentation-evaluation>.note {margin:0;line-height:1.55;font-size:12px}
+.segmentation-eval-controls {display:flex;align-items:center;flex-wrap:wrap;gap:12px}
+.segmentation-eval-confirm {display:inline-flex;align-items:center;gap:7px;
+  font-size:12px;color:#264d6e}
+.segmentation-eval-results {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.segmentation-eval-result {min-width:0;border:1px solid #d9e4ed;background:#fff;
+  border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:7px;
+  font-size:12px;color:#365a75;line-height:1.5}
+.segmentation-eval-result strong {color:#174d70}
+.segmentation-eval-result small {color:#536c80;font-size:11px}
+.segmentation-evaluation>.segmentation-error {color:#9c2c2c;font-size:12px;font-weight:600}
+@media(max-width:720px) {.segmentation-eval-results {grid-template-columns:1fr}}
