@@ -1,7 +1,7 @@
 # PLANO DE DESENVOLVIMENTO — ControlVision
 
 > **Documento vivo e fonte principal de acompanhamento do projeto.**  
-> Atualizado em: **03/11/2026** · Versão do plano: **1.4**  
+> Atualizado em: **03/11/2026** · Versão do plano: **1.5**  
 > Branch de trabalho: `feat/prototipo-validacao` · Estado: **PROTÓTIPO EXPERIMENTAL — NÃO LIBERA PRODUÇÃO**
 >
 > **Regra de continuidade:** antes de iniciar uma alteração, ler a seção **"Onde estamos agora"**; depois de concluir uma entrega, atualizar as caixas de seleção, as evidências, a data e o histórico deste arquivo **no mesmo conjunto de alterações do código**. Não declarar etapas concluídas apenas porque o código foi escrito: exigir teste e revisão dos resultados.
@@ -28,14 +28,14 @@ Construir um sistema de inspeção visual de componentes cortados para calçados
 
 ## 2. Onde estamos agora
 
-**Fase atual: ETAPA 1 — E1.1 a E1.5 implementadas e verificadas pelo CI.**  
-**Próxima ação concreta: E1.6** — definir e implementar um protocolo reproduzível de comparação de máscaras **somente contra referência humana revisada**: IoU, Dice, erro de borda, latência e falhas. Sem máscara revisada, o resultado deve ser **não medido**. **SAM 2 com pesos reais continua não executado** e será avaliado na Etapa 2.
+**Fase atual: ETAPA 1 — infraestrutura E1.1 a E1.6 concluída em código e testes sintéticos; SEM validação óptica industrial.**  
+**Próxima ação concreta: E2.1** — verificar documentação oficial, licença, compatibilidade de pesos e requisitos de CPU/GPU do **SAM 2**, para preparar um ensaio real isolado. Não há checkpoint instalado/validado, nem medição de IoU/Dice em fotos reais; só usar máscaras humanas revisadas.
 
 | Etapa | Tema | Estado | Condição para avançar |
 |---|---|---|---|
 | 0 | Base existente do ControlVision | ✅ Base implementada, **não homologada** | Testes de regressão existentes preservados |
-| 1 | Preparação para IA + baseline do OpenCV | 🚧 **EM EXECUÇÃO (E1.1–E1.5 verificadas)** | Comparação reproduzível definida |
-| 2 | Testar SAM 2 pré-treinado | ⬜ Pendente | Avaliação documentada contra OpenCV |
+| 1 | Preparação para IA + baseline do OpenCV | ✅ **INFRAESTRUTURA E TESTES SINTÉTICOS CONCLUÍDOS** (sem validação real) | Comparação reproduzível definida |
+| 2 | Testar SAM 2 pré-treinado | ⏭️ **PRÓXIMA — iniciar E2.1** | Avaliação documentada contra OpenCV |
 | 3 | Preparar conjunto privado de imagens anotadas | ⬜ Pendente | Imagens e máscaras revisadas + divisão por peça física |
 | 4 | Treinar e avaliar U-Net, **se justificado** | ⬜ Condicional | Melhoria demonstrada em fotos nunca vistas |
 | 5 | Reconhecimento do molde CAD a partir da máscara | ⬜ Pendente | Ranking correto e opção "não identificado" |
@@ -74,7 +74,7 @@ Construir um sistema de inspeção visual de componentes cortados para calçados
 - [x] E1.3 Criar módulo experimental **isolado do fluxo padrão no código** para inferência SAM 2 opt-in, com falha controlada quando modelo/pesos não estiverem instalados. **`backend/app/sam2_optional.py`, rota experimental, testes de indisponibilidade/máscara simulada e CI aprovados.** Isolamento é por módulo + thread, **não por processo**; pesos reais não testados.
 - [x] E1.4 Preparar visualização **lado a lado** da fotografia, máscara OpenCV e máscara SAM 2 na Etapa 3 do Vue, sem substituir a referência atual. **Botão opt-in; estados indisponível/inconclusivo; respostas antigas invalidadas ao trocar foto/tom/molde; frontend compilado e testes backend aprovados.**
 - [x] E1.5 Criar testes sintéticos de contrato, integração, ausência de pesos e regressão. **`frontend/tests/segmentation-comparison.test.mjs`: 12 testes novos da comunicação, respostas independentes, contrato, estados inconclusivos, identidade de método, PNG, concorrência e descarte de resultados obsoletos; integrados ao `npm run build`. Backend mantém testes de pesos/dependências ausentes e regressão. CI aprovado.** Testes de UI em navegador real e execução de pesos reais ainda não realizados.
-- [ ] E1.6 Definir protocolo simples de comparação: IoU, Dice, erro de borda, tempo por imagem e falhas de segmentação.
+- [x] E1.6 Definir e implementar protocolo reproduzível para IoU, Dice, erro médio/p95 de borda (pixels), tempo por método e falhas sem máscara. **`backend/app/segmentation_evaluation.py`, `POST /api/vision/segmentation/evaluate`, upload de PNG revisado no Vue, testes sintéticos e `docs/SEGMENTACAO_METRICAS.md`; CI backend/frontend aprovado.** Sem máscara revisada, nenhuma pontuação é calculada; SAM 2 indisponível = `nao_medido`, não IoU 0. **Não houve avaliação com referências humanas reais.**
 
 **Entregável:** aplicação atual preservada + interface/API para ensaio comparativo, inicialmente sem promessas de melhor desempenho.
 
@@ -83,6 +83,8 @@ Construir um sistema de inspeção visual de componentes cortados para calçados
 **Parcial em 03/11/2026 (E1.4):** `frontend/src/App.vue` apresenta um laboratório de máscaras com três painéis (fotografia original, OpenCV e SAM 2), acionado pelo operador **após** carregar uma foto. Uma chamada `method=sam2` desativada exibe `indisponivel` no painel, sem máscara. Erros independentes de rede são mostrados separadamente, preservando o resultado da outra abordagem. Respostas de requisições antigas são descartadas após mudança de fotografia, modo, tom ou referência CAD. **Não é avaliação de qualidade**, não há máscara humana revisada ou execução real SAM 2; a contagem de vazadores e o fluxo CAD continuam inalterados. A compilação Vue e os testes backend passaram. **E1.5 permanece aberta** porque ainda faltam testes automatizados de comportamento da interface (especialmente concorrência e estado obsoleto).
 
 **Parcial em 03/11/2026 (E1.5):** a lógica de transporte e controle de versão da requisição foi extraída para `frontend/src/segmentationComparison.ts`, compartilhada pela interface. O runner descarta uma comparação inteira quando chega depois de uma nova fotografia/configuração; erro de um método não apaga resultado válido do outro. A resposta é validada quanto a status, método, versão, forma do contrato e cabeçalho/dimensões do PNG. **Não é validação completa do arquivo PNG** (o navegador faz decodificação). Os 12 testes do frontend rodam automaticamente no `npm run build` usando `node:test` com respostas sintéticas; CI de frontend e backend aprovado. **Não foram executados teste end-to-end no navegador, inferência SAM 2 real nem comparação quantitativa de máscaras.**
+
+**Parcial em 03/11/2026 (E1.6):** o protocolo de métricas foi implementado em `backend/app/segmentation_evaluation.py` e documentado em `docs/SEGMENTACAO_METRICAS.md`. Na Etapa 3, o operador pode anexar PNG binário 8-bit (mesma resolução da fotografia) e **declarar revisão humana** antes de avaliar. A API opt-in **reexecuta** OpenCV e SAM 2 na mesma fotografia/configuração. IoU/Dice e distância simétrica média/p95 de bordas só são produzidos para máscaras válidas; ausência de máscara, indisponibilidade e inconclusão resultam em `nao_medido` e `metrics=null` — nunca falso zero de acerto. Tempos continuam de processamento, sem upload. Os testes sintéticos cobrem identidade, deslocamento, não sobreposição, referência inválida, ausência de confirmação humana e IA indisponível. **Nenhuma máscara humana real foi usada; não há resultados de precisão, tolerância ou confiabilidade industrial.** CI: [backend/frontend aprovados](https://github.com/hellennverenaa/controlvision/actions/runs/41673813764). **A ETAPA 1 encerra somente a infraestrutura de ensaio**, não os testes de reconhecimento real.
 
 **Para encerrar:** testes passando e comparação reproduzível; nenhum aumento não explicado de falhas no fluxo atual.
 
@@ -197,7 +199,8 @@ Adicionar uma linha por rodada relevante. Se não houver dados, escrever **"não
 | 23/10/2026 | SAM 2 opt-in (E1.3) | Executor de inferência opcional em thread, prompt de caixa do OpenCV, máscaras simuladas para testar integração | Backend e frontend aprovados; sem instalação de modelo e sem validação óptica real; ausências retornam `indisponivel` | [CI](https://github.com/hellennverenaa/controlvision/actions/runs/39947241641); `backend/tests/test_sam2_optional.py` |
 | 03/11/2026 | Visualização OpenCV × SAM 2 (E1.4) | Etapa 3: fotografia original, máscara binária OpenCV e máscara SAM 2 opcional, com estados explícitos | Compilação frontend e testes backend aprovados; nenhuma inferência real de SAM 2 nem avaliação de qualidade de máscara; medições **não realizadas** | [CI](https://github.com/hellennverenaa/controlvision/actions/runs/41654017596); `frontend/src/App.vue` |
 | 03/11/2026 | Teste manual apresentado pelo operador | Foto da lingueta em malha branca, fundo azul, 960 × 1280 px | OpenCV: máscara produzida, **30,66 ms** informados; SAM 2: **indisponível**, desativado. Detector geral: **15 candidatos circulares**, NÃO 15 furos. Nove CADs testados por forma; sobreposição ilustrativa ~**1,6%** | Captura e relatório enviados na conversa, **não versionados no GitHub**; nenhuma medida em mm, IoU/Dice ou avaliação SAM 2 |
-| 03/11/2026 | E1.5 — testes automatizados de comparação | Módulo frontend com solicitações concorrentes, validação de contrato e rejeição de respostas obsoletas | **12 testes novos passaram**, backend existente e build Vue aprovados. **Sem teste end-to-end de navegador ou pesos SAM 2 reais.** | [CI](https://github.com/hellennverenaa/controlvision/actions/runs/41655868378); `frontend/tests/segmentation-comparison.test.mjs`; **próxima: E1.6** |
+| 03/11/2026 | E1.5 — testes automatizados de comparação | Módulo frontend com solicitações concorrentes, validação de contrato e rejeição de respostas obsoletas | **12 testes novos passaram**, backend existente e build Vue aprovados. **Sem teste end-to-end de navegador ou pesos SAM 2 reais.** | [CI](https://github.com/hellennverenaa/controlvision/actions/runs/41655868378); `frontend/tests/segmentation-comparison.test.mjs` |
+| 03/11/2026 | E1.6 — avaliação de silhuetas com máscara humana | IoU, Dice, distância simétrica média/p95 de borda, tempo e estado de falha, interface/API com PNG binário e confirmação de revisão | **Backend e frontend aprovados com testes sintéticos**, imagem real não avaliada; nenhuma métrica de IA real ou conclusão metrológica | [CI](https://github.com/hellennverenaa/controlvision/actions/runs/41673813764); `docs/SEGMENTACAO_METRICAS.md`; **próxima: E2.1** |
 
 **Modelo para novos registros:** `AAAA-MM-DD | conjunto/fotos e quantidade de peças físicas | método/versão | métricas + casos falhos | commit/PR/teste + decisão`.
 
@@ -237,10 +240,11 @@ Adicionar uma linha por rodada relevante. Se não houver dados, escrever **"não
 | 23/10/2026 | Contrato único de máscaras v1, baseline OpenCV isolado, rota experimental e testes; E1.1/E1.2 concluídas após CI verde | Etapa 1 em execução |
 | 23/10/2026 | E1.3: executor SAM 2 opt-in, sem downloads/dependências novas no serviço padrão, testes de indisponibilidade e predição simulada; CI aprovado | **E1.3 concluída no código** |
 | 03/11/2026 | E1.4: painel lado a lado no Vue, acionamento manual, tratamento de indisponibilidade e invalidação de respostas antigas; CI aprovado | **E1.4 concluída no código** |
-| 03/11/2026 | E1.5: testes de transporte/contrato e descarte de respostas obsoletas, integrados ao build Vue; 12 novos testes e CI backend/frontend verde | **E1.5 concluída; E1.6 próxima** |
+| 03/11/2026 | E1.5: testes de transporte/contrato e descarte de respostas obsoletas, integrados ao build Vue; 12 novos testes e CI backend/frontend verde | **E1.5 concluída** |
+| 03/11/2026 | E1.6: métricas de silhueta humana (IoU/Dice e bordas em px), API/GUI opt-in, indisponibilidade sem pontuação, testes sintéticos e CI aprovado | **ETAPA 1 concluída no código; E2.1 próxima** |
 
 ---
 
 **Referências dentro do repositório:** `README.md` (estado e execução do protótipo), `docs/VALIDACAO.md` (matriz de validação), `backend/app/vision.py` (baseline OpenCV), `backend/app/matching.py` e `backend/app/family_matching.py` (correspondência CAD), `backend/app/texture_anomalies.py` (análise óptica exploratória).
 
-**Próximo item obrigatório: E1.6 — protocolo e métricas de comparação de máscaras (IoU/Dice, erro de borda, latência, falhas), com referência humana revisada e estado não medido quando indisponível.**
+**Próximo item obrigatório: E2.1 — verificar licença, requisitos de ambiente e checkpoint oficial SAM 2 antes do primeiro ensaio real.**
