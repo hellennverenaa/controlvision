@@ -91,12 +91,39 @@ laboratório pretendido (não exige instalar o SAM 2 para fazer o diagnóstico):
 
 ```bash
 cd ~/Documentos/ambiente_dass/controlvision/backend
-python -m app.sam2_preflight
+python3 -m app.sam2_preflight
 ```
 
 O comando imprime JSON com `status`, `issues`, `packages` e
 `warnings`, sem baixar pesos e sem abrir o checkpoint. Não informa
-caminhos absolutos privados. Sem `CONTROLVISION_SAM2_ENABLED=1`, o status
+caminhos absolutos privados.
+
+**Diagnóstico observado no Linux do operador em 03/11/2026:** Python `3.14`,
+`status=desativado`, bibliotecas `torch`, `torchvision` e `sam2` ausentes
+e nenhum checkpoint configurado. Isso **não é falha do diagnóstico**: mostra
+que o laboratório ainda não foi instalado. A seleção `device=cpu` é
+configuração padrão, **não** comprovação de inexistência de placa NVIDIA.
+
+**Compatibilidade Python:** distribuições recentes de PyTorch publicam
+suporte a Python 3.14 (consulte https://pytorch.org/get-started/locally/).
+O SAM 2 declara mínimo Python 3.10, mas a combinação exata de SAM 2,
+torchvision, extensões e drivers **não foi testada neste computador**.
+Preferir, se já disponível, Python 3.12 em uma `venv` dedicada para um
+ensaio controlado; não alterar o Python 3.14 do sistema. Se não houver Python
+3.12, decidir a opção de instalação após verificar distribuição Linux,
+hardware, drivers e versões de PyTorch disponíveis.
+
+**Coleta segura para o próximo passo, sem instalar nada:**
+
+```bash
+. /etc/os-release; echo "$PRETTY_NAME"
+for p in python3.12 python3.11; do command -v "$p" >/dev/null && "$p" --version; done
+if command -v nvidia-smi >/dev/null; then nvidia-smi --query-gpu=name,memory.total --format=csv,noheader; else echo "nvidia-smi não disponível"; fi
+free -h
+```
+
+Caso `nvidia-smi` não exista, isso significa apenas que o utilitário/driver
+não está disponível, e **não** prova que o computador não possui GPU. Sem `CONTROLVISION_SAM2_ENABLED=1`, o status
 será `desativado` mesmo que todas as bibliotecas existam.
 
 Para analisar uma configuração de **futuro teste** (sem executar IA):
@@ -106,7 +133,7 @@ CONTROLVISION_SAM2_ENABLED=1 \
 CONTROLVISION_SAM2_VARIANT=tiny \
 CONTROLVISION_SAM2_DEVICE=cpu \
 CONTROLVISION_SAM2_CHECKPOINT=/caminho/privado/sam2.1_hiera_tiny.pt \
-python -m app.sam2_preflight
+python3 -m app.sam2_preflight
 ```
 
 - `pendente`: falta pré-requisito, configuração ou checkpoint local.
