@@ -62,6 +62,13 @@ type FamilyProfile = { piece_id: string; size: string; cad_circle_count: number;
   guided_regions?: GuidedRegion[] }
 type FamilyMatching = { status: string; tested_references: number; profiles: FamilyProfile[]; warnings: string[] }
 type Preview = { status: string; contour: number[][]; image_size: number[]; detected_regions: number; mode: 'marks'|'holes'; candidates: PhotoCandidate[]; candidate_count: number; micro_candidates?: MicroSignal[]; micro_candidate_count?: number; micro_signal_quality?: string; micro_signals_per_10000_px2?: number; warnings: string[]; matching?: MatchPreview|null; family_matching?: FamilyMatching|null }
+type EvaluationScores = { iou: number; dice: number; boundary_mean_px: number; boundary_p95_px: number }
+type EvaluationMethod = { method:string; segmentation_status:string; evaluation_status:'avaliado'|'nao_medido';
+  metrics:EvaluationScores|null; elapsed_ms:number|null; reason:string|null; prompt_used:boolean; model_version:string|null }
+type EvaluationReport = { status:'experimental'; units:'pixels_nao_calibrados';
+  reference:{human_review_declared:boolean; image_size_px:number[]; foreground_pixels:number};
+  methods:{opencv:EvaluationMethod; sam2:EvaluationMethod}; warnings:string[] }
+
 
 
 const catalog = ref<Catalog|null>(null)
@@ -81,9 +88,67 @@ const pieceTone = ref<'dark'|'light'>('dark')
 const lastPhoto = ref<File|null>(null)
 const segmentationComparison = ref<SegmentationComparison|null>(null)
 const segmentationBusy = ref(false)
+const reviewedMaskFile = ref<File|null>(null)
+const referenceReviewed = ref(false)
+const evaluationReport = ref<EvaluationReport|null>(null)
+const evaluationError = ref('')
+const evaluationBusy = ref(false)
+let evaluationRunId = 0
+function invalidateEvaluation(clearReference=false): void {
+  evaluationRunId += 1
+  evaluationReport.value = null
+  evaluationError.value = ''
+  evaluationBusy.value = false
+  if (clearReference) {
+    reviewedMaskFile.value = null
+    referenceReviewed.value = false
+  }
+}
+function chooseReferenceMask(event: Event): void {
+  invalidateEvaluation(true)
+  reviewedMaskFile.value = (event.target as HTMLInputElement).files?.[0] ?? null
+}
+async function evaluateReviewedMask(): Promise<void> {
+  const file = lastPhoto.value
+  const reference = reviewedMaskFile.value
+  if (!file || !reference || !referenceReviewed.value || busy.value || evaluationBusy.value) return
+  const runId = ++evaluationRunId
+  const mode = photoMode.value
+  const tone = pieceTone.value
+  evaluationBusy.value = true
+  evaluationError.value = ''
+  evaluationReport.value = null
+  try {
+    const form = new FormData()
+    form.append('file',file)
+    form.append('reference_mask',reference)
+    form.append('reference_reviewed','true')
+    form.append('mode',mode)
+    form.append('piece_tone',tone)
+    const response = await fetch('/api/vision/segmentation/evaluate',{method:'POST',body:form})
+    const data: unknown = await response.json()
+    if (!response.ok) {
+      const detail = typeof data === 'object' && data !== null && 'detail' in data ? String(data.detail) : 'Falha na avaliação.'
+      throw new Error(detail)
+    }
+    if (typeof data !== 'object' || data === null || !('status' in data) || data.status !== 'experimental' ||
+        !('methods' in data) || typeof data.methods !== 'object' || !data.methods) {
+      throw new Error('Resposta de avaliação inválida.')
+    }
+    if (runId === evaluationRunId && lastPhoto.value === file && reviewedMaskFile.value === reference &&
+        referenceReviewed.value && photoMode.value === mode && pieceTone.value === tone) {
+      evaluationReport.value = data as EvaluationReport
+    }
+  } catch(e) {
+    if (runId === evaluationRunId) evaluationError.value = e instanceof Error?e.message:'Erro ao avaliar máscara.'
+  } finally {
+    if (runId === evaluationRunId) evaluationBusy.value=false
+  }
+}
 const segmentationRunner = createSegmentationComparisonRunner((url, init) => fetch(url, init))
 let segmentationRunId = 0
 function resetSegmentationComparison(): void {
+  invalidateEvaluation(true)
   // Invalida requisições antigas ao trocar foto, tom ou molde, mesmo com rede lenta.
   segmentationRunId += 1
   segmentationRunner.invalidate()
@@ -94,6 +159,7 @@ async function runSegmentationComparison(): Promise<void> {
   const file = lastPhoto.value
   if (!file || !preview.value || segmentationBusy.value) return
   const runId = ++segmentationRunId
+  invalidateEvaluation()
   segmentationBusy.value = true
   segmentationComparison.value = null
   const mode = photoMode.value
@@ -1007,6 +1073,52 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
             não da rede ou renderização. Estas imagens <b>não avaliam IoU/Dice</b> nem demonstram
             melhoria da IA sem máscaras humanas revisadas. Nenhum resultado altera a análise CAD atual.
           </p>
+          <section class="segmentation-evaluation" aria-label="Métricas experimentais com referência humana">
+            <h3>E1.6 · Qualidade da silhueta com referência humana</h3>
+            <p class="note">Sem uma máscara <strong>criada ou corrigida e revisada por uma pessoa</strong>,
+              IoU, Dice e erros de borda permanecem <b>não medidos</b>.
+              Não use a própria máscara automática como referência de verdade.</p>
+            <div class="segmentation-eval-controls">
+              <label class="button secondary">Selecionar máscara revisada (PNG)
+                <input type="file" accept="image/png,.png" hidden @change="chooseReferenceMask" />
+              </label>
+              <span class="note">{{reviewedMaskFile?.name ?? 'Nenhuma máscara revisada fornecida.'}}</span>
+              <label v-if="reviewedMaskFile" class="segmentation-eval-confirm">
+                <input v-model="referenceReviewed" type="checkbox" @change="invalidateEvaluation()" />
+                Confirmo que revisei manualmente o contorno desta peça.
+              </label>
+              <button type="button" class="button primary"
+                :disabled="!reviewedMaskFile || !referenceReviewed || evaluationBusy || segmentationBusy || busy"
+                @click="evaluateReviewedMask">
+                {{evaluationBusy?'Calculando métricas…':'Avaliar contra referência revisada'}}
+              </button>
+            </div>
+            <p class="note">A máscara deve ser um PNG de <b>8 bits, um canal, exatamente no mesmo tamanho e orientação da fotografia</b>,
+              contendo somente branco (255, peça) e preto (0, fundo). Não há redimensionamento automático.
+              A avaliação processa a fotografia novamente e não salva os arquivos no servidor.</p>
+            <p v-if="evaluationBusy" role="status">Avaliando os dois métodos na mesma fotografia…</p>
+            <p v-if="evaluationError" class="segmentation-error" role="alert">{{evaluationError}}</p>
+            <div v-if="evaluationReport" class="segmentation-eval-results">
+              <div v-for="method in (['opencv','sam2'] as const)" :key="method" class="segmentation-eval-result">
+                <strong>{{method==='opencv'?'OpenCV':'SAM 2 (IA opcional)'}}</strong>
+                <small>Segmentação: {{evaluationReport.methods[method].segmentation_status}} · Avaliação:
+                  {{evaluationReport.methods[method].evaluation_status==='avaliado'?'calculada':'não medida'}}</small>
+                <template v-if="evaluationReport.methods[method].metrics">
+                  <span>IoU: <b>{{evaluationReport.methods[method].metrics!.iou.toFixed(4)}}</b> ·
+                    Dice: <b>{{evaluationReport.methods[method].metrics!.dice.toFixed(4)}}</b></span>
+                  <span>Erro médio da borda: <b>{{evaluationReport.methods[method].metrics!.boundary_mean_px.toFixed(2)}} px</b> ·
+                    p95: <b>{{evaluationReport.methods[method].metrics!.boundary_p95_px.toFixed(2)}} px</b></span>
+                </template>
+                <span v-else><b>Qualidade não medida.</b> {{evaluationReport.methods[method].reason}}</span>
+                <small>Tempo de processamento: {{evaluationReport.methods[method].elapsed_ms===null?'não medido':evaluationReport.methods[method].elapsed_ms+' ms'}}</small>
+              </div>
+            </div>
+            <p v-if="evaluationReport" class="note">
+              Métricas experimentais da <b>silhueta</b>, em pixels; não medem vazadores,
+              numeração nem tolerância industrial. Revisão humana declarada pelo operador.
+              Uma única fotografia não demonstra precisão ou generalização.
+            </p>
+          </section>
         </section>
       </section>
       <div v-if="step===3" class="image-next-step">
