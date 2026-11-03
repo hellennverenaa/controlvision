@@ -77,6 +77,22 @@ def test_invalid_variant_and_device_stay_unavailable(monkeypatch, tmp_path):
     assert result["status"] == "indisponivel"
 
 
+def test_wrong_checkpoint_variant_cannot_load_model(monkeypatch, tmp_path):
+    enable_local_fake_checkpoint(monkeypatch, tmp_path, variant="large")
+    monkeypatch.setattr(
+        sam2_optional, "analyze_image",
+        lambda *args, **kwargs: pytest.fail("Não deveria analisar a imagem."),
+    )
+    monkeypatch.setattr(
+        sam2_optional, "_predict_sam2_mask",
+        lambda *args: pytest.fail("Não deveria carregar pesos incompatíveis."),
+    )
+    response = sam2_optional.segment_sam2_optional(image_with_piece())
+    assert response["status"] == "indisponivel"
+    assert response["mask_png_base64"] is None
+    assert "não corresponde" in response["warnings"][0]
+
+
 def test_missing_dependencies_do_not_fall_back_to_opencv(monkeypatch, tmp_path):
     enable_local_fake_checkpoint(monkeypatch, tmp_path)
 
