@@ -1,9 +1,12 @@
-# SAM 2 opcional no ControlVision — Etapa E1.3
+# SAM 2 opcional no ControlVision — Etapas E1.3 e E2.1
 
-**Situação em 23/10/2026:** executor preparado, **desativado por padrão**, sem
-pesos no repositório, sem dependências pesadas no `backend/requirements.txt`
-e **sem teste de inferência com modelo real**. Os testes automatizados usam
-predições simuladas; eles não medem qualidade de segmentação.
+**Situação em 03/11/2026:** executor preparado e **desativado por padrão**.
+A E2.1 verificou as dependências, licenças e checkpoints oficiais, adicionando
+diagnóstico estático `python -m app.sam2_preflight`. Os pesos e bibliotecas
+pesadas continuam ausentes do `backend/requirements.txt`; **nenhum modelo
+foi instalado/executado no CI ou validado em fotografia real**.
+
+**Checklist e referências oficiais de preparação:** [SAM2_PREPARACAO_E2.md](SAM2_PREPARACAO_E2.md).
 
 ## Por que um executor opcional?
 
@@ -58,6 +61,9 @@ As configurações oficiais correspondentes são escolhidas por variante
 (`configs/sam2.1/sam2.1_hiera_t.yaml`, `_s.yaml`, `_b+.yaml`, `_l.yaml`).
 Os pesos devem **corresponder à configuração escolhida**; a extensão e
 o nome do arquivo não bastam para demonstrar compatibilidade.
+O executor agora verifica também que o **nome do arquivo local coincide com
+a variante oficial**, antes de executar; isso previne erros óbvios, mas não
+verifica autenticidade ou hash.
 
 Exemplo de requisição **com SAM 2 desativado** (não precisa instalar IA):
 
@@ -113,7 +119,14 @@ configuração inválida, dependências ausentes, falha na inferência, máscara
 simuladas válidas e inválidas, preservação da API OpenCV existente e serialização
 do contrato compartilhado.
 
-**E1.4 (próxima):** mostrar máscaras OpenCV/SAM 2 lado a lado no Vue,
-inclusive estados indisponível/inconclusivo, sem afirmar que a inferência real
-já foi validada. E1.5 será encerrada somente após os testes complementares
-de interface e o ensaio de E2 com dependências/pesos locais.
+**E1.4–E1.6 concluídas como infraestrutura/testes sintéticos.**
+A etapa de comparação de máscaras já funciona, inclusive com um protocolo
+de métricas IoU/Dice quando há máscara humana revisada; consulte
+[SEGMENTACAO_METRICAS.md](SEGMENTACAO_METRICAS.md).
+
+**E2.1 verificada:** fontes da Meta, correspondência de variante/checkpoint,
+preflight local sem downloads e testes de rejeição antes da inferência.
+**Próxima: E2.2** — executar realmente o SAM 2.1 `tiny` em laboratório
+isolado, com checkpoint oficial, registrar recursos/performance e preservar
+a análise OpenCV padrão. Testes de integração simulados **não** demonstram
+qualidade óptica da IA.
