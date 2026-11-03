@@ -255,3 +255,34 @@ uv --version
 Fonte: https://docs.astral.sh/uv/getting-started/installation/ . O instalador baixa código externo; usar somente após confiar na origem/revisar o conteúdo. Caso `curl` falhe, interromper e registrar o erro, sem recorrer automaticamente a `sudo` ou `--classic`.
 
 **Critério seguinte, ainda não atendido:** confirmar versão de `uv` no computador; só então instalar Python 3.12 e criar `sam2-lab/.venv`. **E2.2 continua pendente.**
+
+
+### Confirmação posterior — uv disponível (03/11/2026)
+
+O operador executou `curl -LsSf https://astral.sh/uv/install.sh | sh`, ajustou o `PATH` para `$HOME/.local/bin` e obteve:
+
+```text
+installing to /home/hellen/.local/bin
+  uv
+  uvx
+everything's installed!
+uv 0.13.7 (x86_64-unknown-linux-gnu)
+```
+
+**Verificado por saída de terminal fornecida:** `uv` versão 0.13.7 instalada para o usuário. A mensagem `unrecognized subcommand '0.x.x'` resultou de executar literalmente um exemplo de versão, **não** é falha da instalação. Nenhum comando de Python 3.12 ou criação de `sam2-lab/.venv` foi confirmado ainda.
+
+**Próxima verificação (somente ambiente isolado, sem instalar IA):**
+
+```bash
+cd ~/Documentos/ambiente_dass
+uv python install 3.12
+mkdir -p sam2-lab
+uv venv --python 3.12 sam2-lab/.venv
+source sam2-lab/.venv/bin/activate
+python --version
+which python
+free -h
+df -h "$HOME"
+```
+
+A etapa **E2.2 permanece em andamento** até a execução real controlada do modelo e avaliação correspondente.
