@@ -286,3 +286,40 @@ df -h "$HOME"
 ```
 
 A etapa **E2.2 permanece em andamento** até a execução real controlada do modelo e avaliação correspondente.
+
+
+### E2.2 — Python 3.12 isolado confirmado; RAM/swap precisam de reavaliação (03/11/2026)
+
+**Evidência fornecida pelo operador (não executada remotamente por este assistente):**
+
+```text
+uv python install 3.12
+Installed Python 3.12.16
+uv venv --python 3.12 sam2-lab/.venv
+Using CPython 3.12.16
+Creating virtual environment at: sam2-lab/.venv
+python --version
+Python 3.12.16
+which python
+/home/hellen/Documentos/ambiente_dass/sam2-lab/.venv/bin/python
+free -h
+Mem.: 14Gi total, 10Gi usada, 1,7Gi livre, 4,5Gi disponível
+Swap: 4,0Gi total, 4,0Gi usada, 17Mi livre
+df -h "$HOME"
+/dev/nvme0n1p5 149G total, 111G usado, 31G disponível, 79% uso
+```
+
+**Conclusões verificáveis:** ambiente virtual `sam2-lab/.venv` criado fora do repositório, com Python 3.12.16; `uv` 0.13.7 já confirmado. Os 31 GiB disponíveis de armazenamento precisam ser preservados para arquivos do usuário e futuras dependências; não representam reserva exclusiva de IA. Swap está praticamente todo ocupado, o que **não prova por si só falta de RAM no momento**, mas é um sinal de pressão anterior e possível degradação de desempenho. Medidas são instantâneas e podem mudar.
+
+**Próximo diagnóstico, apenas leitura (sem sudo):**
+
+```bash
+free -h
+swapon --show
+ps -eo pid,comm,%mem,rss --sort=-rss | head -n 16
+df -h "$HOME"
+```
+
+`rss` é memória residente em KiB, e `%mem` é porcentagem aproximada da RAM física; somas de RSS podem contar páginas compartilhadas mais de uma vez. Revisar processos de maior consumo **sem encerrá-los automaticamente**. Não executar `swapoff`, não instalar bibliotecas pesadas nem baixar checkpoints antes de revisar esse diagnóstico. Não é necessário compartilhar linha de comando completa, variáveis, nomes de arquivos privados ou segredos.
+
+**Estado:** preparação de Python isolado **concluída**; instalação PyTorch/torchvision, SAM 2.1 tiny, pesos e inferência **não realizadas**. E2.2 continua aberta.
