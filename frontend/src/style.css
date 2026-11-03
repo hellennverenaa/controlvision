@@ -199,3 +199,31 @@
 .irregular-bands{display:flex;flex-wrap:wrap;gap:8px}
 .irregular-bands>span{font-size:11px;border:1px solid #dee6ee;border-radius:6px;
   padding:5px;background:#f6f8fb;color:#50667d}
+
+
+/* E1.4 — comparação da silhueta externa sem alterar a inspeção CAD. */
+.segmentation-compare {
+  display:flex;flex-direction:column;gap:13px;margin:18px 0 8px;padding:18px;
+  border:1px solid #b8cbd8;border-radius:12px;background:#f6f9fc;
+}
+.segmentation-compare-heading {display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.segmentation-compare-heading strong {color:#174367;font-size:15px}
+.segmentation-compare-heading .note,.segmentation-compare>.note {margin:5px 0 0;font-size:12px;line-height:1.5}
+.segmentation-compare-progress {font-size:13px;padding:12px;border-radius:8px;
+  background:#e4eef6;color:#174367}
+.segmentation-compare-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.segmentation-compare-card {min-width:0;background:white;border:1px solid #d5e0ea;
+  border-radius:9px;padding:11px;display:flex;flex-direction:column;gap:7px}
+.segmentation-compare-card>strong {font-size:12px;color:#244c6b}
+.segmentation-image-frame {width:100%;height:225px;display:flex;justify-content:center;align-items:center;
+  overflow:hidden;border-radius:7px;background:#1d2935}
+.segmentation-image-frame img {max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain}
+.segmentation-image-placeholder {height:225px;display:flex;align-items:center;justify-content:center;
+  padding:14px;text-align:center;background:#e9eef3;border:1px dashed #bac8d4;
+  border-radius:7px;color:#596d7e;font-size:13px}
+.segmentation-compare-card small {font-size:11px;line-height:1.5;color:#52687a;overflow-wrap:anywhere}
+.segmentation-compare-card .segmentation-error {color:#9c2c2c}
+@media(max-width:800px) {
+  .segmentation-compare-grid {grid-template-columns:1fr}
+  .segmentation-image-frame,.segmentation-image-placeholder {height:260px}
+}
