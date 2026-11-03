@@ -1,7 +1,7 @@
 # PLANO DE DESENVOLVIMENTO — ControlVision
 
 > **Documento vivo e fonte principal de acompanhamento do projeto.**  
-> Atualizado em: **03/11/2026** · Versão do plano: **1.5**  
+> Atualizado em: **03/11/2026** · Versão do plano: **1.6**  
 > Branch de trabalho: `feat/prototipo-validacao` · Estado: **PROTÓTIPO EXPERIMENTAL — NÃO LIBERA PRODUÇÃO**
 >
 > **Regra de continuidade:** antes de iniciar uma alteração, ler a seção **"Onde estamos agora"**; depois de concluir uma entrega, atualizar as caixas de seleção, as evidências, a data e o histórico deste arquivo **no mesmo conjunto de alterações do código**. Não declarar etapas concluídas apenas porque o código foi escrito: exigir teste e revisão dos resultados.
@@ -28,14 +28,14 @@ Construir um sistema de inspeção visual de componentes cortados para calçados
 
 ## 2. Onde estamos agora
 
-**Fase atual: ETAPA 1 — infraestrutura E1.1 a E1.6 concluída em código e testes sintéticos; SEM validação óptica industrial.**  
-**Próxima ação concreta: E2.1** — verificar documentação oficial, licença, compatibilidade de pesos e requisitos de CPU/GPU do **SAM 2**, para preparar um ensaio real isolado. Não há checkpoint instalado/validado, nem medição de IoU/Dice em fotos reais; só usar máscaras humanas revisadas.
+**Fase atual: ETAPA 2 — E2.1 verificada (fontes oficiais + preflight + testes); IA ainda desativada.**  
+**Próxima ação concreta: E2.2** — preparar **ambiente Linux isolado**, instalar a distribuição oficial SAM 2.1 e obter o checkpoint `tiny` **fora do repositório**, executar um ensaio real em fotografia privada. **Nenhuma inferência com pesos reais foi executada** neste desenvolvimento; GPU, tempo/memória e qualidade seguem **não medidos**. Protocolo em `docs/SAM2_PREPARACAO_E2.md`.
 
 | Etapa | Tema | Estado | Condição para avançar |
 |---|---|---|---|
 | 0 | Base existente do ControlVision | ✅ Base implementada, **não homologada** | Testes de regressão existentes preservados |
 | 1 | Preparação para IA + baseline do OpenCV | ✅ **INFRAESTRUTURA E TESTES SINTÉTICOS CONCLUÍDOS** (sem validação real) | Comparação reproduzível definida |
-| 2 | Testar SAM 2 pré-treinado | ⏭️ **PRÓXIMA — iniciar E2.1** | Avaliação documentada contra OpenCV |
+| 2 | Testar SAM 2 pré-treinado | 🚧 **EM EXECUÇÃO (E2.1 concluída; E2.2 próxima)** | Avaliação documentada contra OpenCV |
 | 3 | Preparar conjunto privado de imagens anotadas | ⬜ Pendente | Imagens e máscaras revisadas + divisão por peça física |
 | 4 | Treinar e avaliar U-Net, **se justificado** | ⬜ Condicional | Melhoria demonstrada em fotos nunca vistas |
 | 5 | Reconhecimento do molde CAD a partir da máscara | ⬜ Pendente | Ranking correto e opção "não identificado" |
@@ -92,12 +92,14 @@ Construir um sistema de inspeção visual de componentes cortados para calçados
 
 **Meta:** descobrir se um modelo existente já melhora a extração do contorno da peça.
 
-- [ ] E2.1 Verificar licença dos pesos, dependências, requisitos de CPU/GPU e custo de execução.
+- [x] E2.1 Verificar licença dos pesos, dependências, requisitos de CPU/GPU e requisitos para avaliar custo de execução. **Fontes oficiais consultadas e registradas em `docs/SAM2_PREPARACAO_E2.md`; recomendação inicial SAM 2.1 `tiny`, licença Apache-2.0 e pareamento variante/configuração/checkpoint confirmado. `backend/app/sam2_preflight.py` faz verificação estática local sem downloads/importação de torch; executor rejeita nome de checkpoint incompatível. Novos testes aprovados em CI.** **Custo, tempo, RAM/VRAM e compatibilidade GPU reais não medidos; medição em E2.2.**
 - [ ] E2.2 Executar SAM 2 de maneira **opcional** em ambiente local de experimento, sem iniciar automaticamente no servidor principal.
 - [ ] E2.3 Usar caixa da peça/indicações vindas do OpenCV ou cliques do operador como *prompts*, documentando o nível de intervenção humana.
 - [ ] E2.4 Comparar máscara SAM 2 com OpenCV **nas mesmas fotos**, contra máscaras corrigidas por pessoa.
 - [ ] E2.5 Registrar casos bons e ruins: fundo azul, tecido claro, malha, rotações, sombras, recortes próximos à borda.
 - [ ] E2.6 Decidir: **adotar como auxiliar**, **usar só para anotar dados** ou **não utilizar**.
+
+**Parcial em 03/11/2026 (E2.1):** verificação documental concluída com fontes da Meta. `docs/SAM2_PREPARACAO_E2.md` registra Apache-2.0 (código/checkpoints), Linux/Python ≥3.10, PyTorch ≥2.5.1 e torchvision compatível, fontes de checkpoints SAM 2.1 e riscos de GPU/CPU. O comando `cd backend && python -m app.sam2_preflight` verifica configurações, módulos/versões e existência/pareamento de checkpoint **sem instalar, ler pesos, importar torch ou iniciar IA**; testes sintéticos de preflight e rejeição de checkpoint incompatível passaram no CI. **Nome de arquivo não comprova integridade/autenticidade; o preflight não garante que o modelo conseguirá executar.** **RAM, VRAM, latência e custo não medidos**; serão avaliados com hardware real em E2.2. OpenCV, CAD e vazadores permanecem inalterados. **Sem foto real avaliada, sem IoU/Dice de IA.**
 
 **Para encerrar:** tabela objetiva de métricas e limitações; decisão registrada. Resultado melhor em apenas uma foto não basta.
 
@@ -200,7 +202,8 @@ Adicionar uma linha por rodada relevante. Se não houver dados, escrever **"não
 | 03/11/2026 | Visualização OpenCV × SAM 2 (E1.4) | Etapa 3: fotografia original, máscara binária OpenCV e máscara SAM 2 opcional, com estados explícitos | Compilação frontend e testes backend aprovados; nenhuma inferência real de SAM 2 nem avaliação de qualidade de máscara; medições **não realizadas** | [CI](https://github.com/hellennverenaa/controlvision/actions/runs/41654017596); `frontend/src/App.vue` |
 | 03/11/2026 | Teste manual apresentado pelo operador | Foto da lingueta em malha branca, fundo azul, 960 × 1280 px | OpenCV: máscara produzida, **30,66 ms** informados; SAM 2: **indisponível**, desativado. Detector geral: **15 candidatos circulares**, NÃO 15 furos. Nove CADs testados por forma; sobreposição ilustrativa ~**1,6%** | Captura e relatório enviados na conversa, **não versionados no GitHub**; nenhuma medida em mm, IoU/Dice ou avaliação SAM 2 |
 | 03/11/2026 | E1.5 — testes automatizados de comparação | Módulo frontend com solicitações concorrentes, validação de contrato e rejeição de respostas obsoletas | **12 testes novos passaram**, backend existente e build Vue aprovados. **Sem teste end-to-end de navegador ou pesos SAM 2 reais.** | [CI](https://github.com/hellennverenaa/controlvision/actions/runs/41655868378); `frontend/tests/segmentation-comparison.test.mjs` |
-| 03/11/2026 | E1.6 — avaliação de silhuetas com máscara humana | IoU, Dice, distância simétrica média/p95 de borda, tempo e estado de falha, interface/API com PNG binário e confirmação de revisão | **Backend e frontend aprovados com testes sintéticos**, imagem real não avaliada; nenhuma métrica de IA real ou conclusão metrológica | [CI](https://github.com/hellennverenaa/controlvision/actions/runs/41673813764); `docs/SEGMENTACAO_METRICAS.md`; **próxima: E2.1** |
+| 03/11/2026 | E1.6 — avaliação de silhuetas com máscara humana | IoU, Dice, distância simétrica média/p95 de borda, tempo e estado de falha, interface/API com PNG binário e confirmação de revisão | **Backend e frontend aprovados com testes sintéticos**, imagem real não avaliada; nenhuma métrica de IA real ou conclusão metrológica | [CI](https://github.com/hellennverenaa/controlvision/actions/runs/41673813764); `docs/SEGMENTACAO_METRICAS.md` |
+| 03/11/2026 | E2.1 — revisão SAM 2.1 e preflight local | Meta Apache-2.0, Python ≥3.10, torch ≥2.5.1, torchvision compatível; checkpoint `tiny` e variantes oficiais; checagem de pacote e nome de pesos sem execução | Backend e frontend aprovados; **pesos não baixados, IA real não executada, GPU/memória/latência/custo não medidos** | [CI](https://github.com/hellennverenaa/controlvision/actions/runs/41675036555); `backend/tests/test_sam2_preflight.py`; `docs/SAM2_PREPARACAO_E2.md`; **próxima: E2.2** |
 
 **Modelo para novos registros:** `AAAA-MM-DD | conjunto/fotos e quantidade de peças físicas | método/versão | métricas + casos falhos | commit/PR/teste + decisão`.
 
@@ -241,10 +244,11 @@ Adicionar uma linha por rodada relevante. Se não houver dados, escrever **"não
 | 23/10/2026 | E1.3: executor SAM 2 opt-in, sem downloads/dependências novas no serviço padrão, testes de indisponibilidade e predição simulada; CI aprovado | **E1.3 concluída no código** |
 | 03/11/2026 | E1.4: painel lado a lado no Vue, acionamento manual, tratamento de indisponibilidade e invalidação de respostas antigas; CI aprovado | **E1.4 concluída no código** |
 | 03/11/2026 | E1.5: testes de transporte/contrato e descarte de respostas obsoletas, integrados ao build Vue; 12 novos testes e CI backend/frontend verde | **E1.5 concluída** |
-| 03/11/2026 | E1.6: métricas de silhueta humana (IoU/Dice e bordas em px), API/GUI opt-in, indisponibilidade sem pontuação, testes sintéticos e CI aprovado | **ETAPA 1 concluída no código; E2.1 próxima** |
+| 03/11/2026 | E1.6: métricas de silhueta humana (IoU/Dice e bordas em px), API/GUI opt-in, indisponibilidade sem pontuação, testes sintéticos e CI aprovado | **ETAPA 1 concluída no código** |
+| 03/11/2026 | E2.1: licença/requisitos oficiais, checklists de CPU/GPU e pareamento de checkpoint, preflight sem inferência, bloqueio de variante incompatível e testes aprovados | **E2.1 concluída; E2.2 próxima** |
 
 ---
 
-**Referências dentro do repositório:** `README.md` (estado e execução do protótipo), `docs/VALIDACAO.md` (matriz de validação), `backend/app/vision.py` (baseline OpenCV), `backend/app/matching.py` e `backend/app/family_matching.py` (correspondência CAD), `backend/app/texture_anomalies.py` (análise óptica exploratória).
+**Referências dentro do repositório:** `README.md` (estado e execução do protótipo), `docs/VALIDACAO.md` (matriz de validação), `backend/app/vision.py` (baseline OpenCV), `backend/app/matching.py` e `backend/app/family_matching.py` (correspondência CAD), `backend/app/texture_anomalies.py` (análise óptica exploratória), `docs/SAM2_PREPARACAO_E2.md` e `backend/app/sam2_preflight.py` (verificação SAM 2.1).
 
-**Próximo item obrigatório: E2.1 — verificar licença, requisitos de ambiente e checkpoint oficial SAM 2 antes do primeiro ensaio real.**
+**Próximo item obrigatório: E2.2 — primeiro ensaio real isolado do SAM 2.1 tiny com checkpoint oficial e foto privada; registrar tempos, recursos, falhas e limites.**
