@@ -72,7 +72,7 @@ export function validateSegmentationResult(
       !value.warnings.every(s => typeof s === 'string') ||
       !Array.isArray(value.contour_px) ||
       !Number.isFinite(value.elapsed_ms) || Number(value.elapsed_ms) < 0 ||
-      !Number.isInteger(value.foreground_pixels) || Number(value.foreground_pixels) < 0 ||
+      typeof value.foreground_pixels !== 'number' || !Number.isInteger(value.foreground_pixels) || value.foreground_pixels < 0 ||
       typeof value.prompt_used !== 'boolean' ||
       typeof value.mask_origin !== 'string' ||
       value.mask_mime_type !== 'image/png' ||
