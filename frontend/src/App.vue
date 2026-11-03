@@ -86,6 +86,7 @@ const step = ref<1|2|3>(1)
 const photoMode = ref<'marks'|'holes'>('marks')
 const pieceTone = ref<'dark'|'light'>('dark')
 const lastPhoto = ref<File|null>(null)
+const evaluationMethods: Array<'opencv'|'sam2'> = ['opencv','sam2']
 const segmentationComparison = ref<SegmentationComparison|null>(null)
 const segmentationBusy = ref(false)
 const reviewedMaskFile = ref<File|null>(null)
@@ -1099,7 +1100,7 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
             <p v-if="evaluationBusy" role="status">Avaliando os dois métodos na mesma fotografia…</p>
             <p v-if="evaluationError" class="segmentation-error" role="alert">{{evaluationError}}</p>
             <div v-if="evaluationReport" class="segmentation-eval-results">
-              <div v-for="method in (['opencv','sam2'] as const)" :key="method" class="segmentation-eval-result">
+              <div v-for="method in evaluationMethods" :key="method" class="segmentation-eval-result">
                 <strong>{{method==='opencv'?'OpenCV':'SAM 2 (IA opcional)'}}</strong>
                 <small>Segmentação: {{evaluationReport.methods[method].segmentation_status}} · Avaliação:
                   {{evaluationReport.methods[method].evaluation_status==='avaliado'?'calculada':'não medida'}}</small>
