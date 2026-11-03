@@ -61,6 +61,16 @@ type FamilyProfile = { piece_id: string; size: string; cad_circle_count: number;
   guided_regions?: GuidedRegion[] }
 type FamilyMatching = { status: string; tested_references: number; profiles: FamilyProfile[]; warnings: string[] }
 type Preview = { status: string; contour: number[][]; image_size: number[]; detected_regions: number; mode: 'marks'|'holes'; candidates: PhotoCandidate[]; candidate_count: number; micro_candidates?: MicroSignal[]; micro_candidate_count?: number; micro_signal_quality?: string; micro_signals_per_10000_px2?: number; warnings: string[]; matching?: MatchPreview|null; family_matching?: FamilyMatching|null }
+type SegmentationResult = {
+  schema_version: string; status: 'ok'|'inconclusivo'|'indisponivel'; method: string;
+  image_size_px: number[]; mask_png_base64: string|null; mask_mime_type: string;
+  mask_origin: string; contour_px: number[][]; foreground_pixels: number;
+  elapsed_ms: number; prompt_used: boolean; model_version: string|null;
+  calibrated: boolean; requires_human_review: boolean; warnings: string[]
+}
+type SegmentationPanel = { result: SegmentationResult|null; error: string|null }
+type SegmentationComparison = { opencv: SegmentationPanel; sam2: SegmentationPanel }
+
 
 const catalog = ref<Catalog|null>(null)
 const selectedId = ref<string|null>(null)
@@ -77,6 +87,64 @@ const step = ref<1|2|3>(1)
 const photoMode = ref<'marks'|'holes'>('marks')
 const pieceTone = ref<'dark'|'light'>('dark')
 const lastPhoto = ref<File|null>(null)
+const segmentationComparison = ref<SegmentationComparison|null>(null)
+const segmentationBusy = ref(false)
+let segmentationRunId = 0
+function resetSegmentationComparison(): void {
+  // Invalida requisições assíncronas antigas ao trocar foto, tom ou molde.
+  segmentationRunId += 1
+  segmentationComparison.value = null
+  segmentationBusy.value = false
+}
+function segmentationMaskSrc(result: SegmentationResult|null): string|null {
+  return result?.status === 'ok' && result.mask_mime_type === 'image/png' &&
+    result.mask_png_base64 ? 'data:image/png;base64,' + result.mask_png_base64 : null
+}
+async function runSegmentationComparison(): Promise<void> {
+  const file = lastPhoto.value
+  if (!file || !preview.value || segmentationBusy.value) return
+  const runId = ++segmentationRunId
+  segmentationBusy.value = true
+  segmentationComparison.value = null
+  const mode = photoMode.value
+  const tone = pieceTone.value
+  async function requestMask(method: 'opencv'|'sam2'): Promise<SegmentationPanel> {
+    try {
+      const form = new FormData()
+      form.append('file', file as File)
+      form.append('method', method)
+      form.append('mode', mode)
+      form.append('piece_tone', tone)
+      const response = await fetch('/api/vision/segmentation/preview', {method:'POST',body:form})
+      const result: SegmentationResult | {detail?:string} = await response.json()
+      if (!response.ok) throw new Error('detail' in result ? (result.detail ?? 'Falha na requisição.') : 'Falha na requisição.')
+      const mask = result as SegmentationResult
+      if (mask.schema_version !== '1.0' || mask.method !== (method === 'opencv' ? 'opencv_baseline' : 'sam2_optional') ||
+          !['ok', 'inconclusivo', 'indisponivel'].includes(mask.status) ||
+          !Array.isArray(mask.image_size_px) || mask.image_size_px.length !== 2 ||
+          !Array.isArray(mask.warnings)) {
+        throw new Error('Resposta da segmentação incompatível com o contrato v1.')
+      }
+      // Erro explícito quando a resposta declara sucesso sem uma máscara PNG real.
+      if (mask.status === 'ok' && (!mask.mask_png_base64 || mask.mask_mime_type !== 'image/png')) {
+        throw new Error('A segmentação declarou sucesso, mas não retornou uma máscara PNG.')
+      }
+      return {result:mask,error:null}
+    } catch(e) {
+      return {result:null,error:e instanceof Error ? e.message : 'Erro ao consultar segmentação.'}
+    }
+  }
+  try {
+    const [opencv,sam2] = await Promise.all([requestMask('opencv'),requestMask('sam2')])
+    if (runId === segmentationRunId && lastPhoto.value === file &&
+        photoMode.value === mode && pieceTone.value === tone) {
+      segmentationComparison.value = {opencv,sam2}
+    }
+  } finally {
+    if (runId === segmentationRunId) segmentationBusy.value = false
+  }
+}
+
 const showMatching = ref(true)
 const showFamilyPattern = ref(true)
 const familyProfileIndex = ref(0)
@@ -236,6 +304,7 @@ const selected = computed(() => unknownSize.value ? null : catalog.value?.pieces
 const canAdvance = computed(() => !!selected.value || (unknownSize.value && !!catalog.value?.pieces.length))
 function selectPiece(piece: Piece): void { unknownSize.value=false; selectedId.value=piece.id }
 function selectUnknownSize(): void {
+  resetSegmentationComparison()
   validationHistory.value=[]
   physicallyConfirmedMarkIds.value=[]
   unknownSize.value=true
@@ -280,6 +349,7 @@ const detailBox = computed(() => fitBox(selected.value?.points ?? []))
 async function importFile(event: Event): Promise<void> {
   const file=(event.target as HTMLInputElement).files?.[0]
   if (!file) return
+  resetSegmentationComparison()
   validationHistory.value=[]
   physicallyConfirmedMarkIds.value=[]
   busy.value=true; error.value=''; catalog.value=null; selectedId.value=null
@@ -299,6 +369,7 @@ async function importFile(event: Event): Promise<void> {
 }
 
 async function processPhoto(file: File): Promise<void> {
+  resetSegmentationComparison()
   if (lastPhoto.value !== file) {
     photoSerial.value+=1
     manualMarks.value=[]
@@ -358,7 +429,7 @@ function photograph(): void {
   canvas.toBlob(blob=>{if(blob) void processPhoto(new File([blob],'captura.png',{type:'image/png'}))},'image/png')
 }
 watch([photoMode,pieceTone], () => { manualReport.value=null; if(lastPhoto.value) void processPhoto(lastPhoto.value) })
-watch(selectedId, () => {preview.value=null;lastPhoto.value=null;manualMarks.value=[];physicallyConfirmedMarkIds.value=[];validationHistory.value=[];manualReport.value=null;if(photoUrl.value)URL.revokeObjectURL(photoUrl.value);photoUrl.value='' })
+watch(selectedId, () => {resetSegmentationComparison();preview.value=null;lastPhoto.value=null;manualMarks.value=[];physicallyConfirmedMarkIds.value=[];validationHistory.value=[];manualReport.value=null;if(photoUrl.value)URL.revokeObjectURL(photoUrl.value);photoUrl.value='' })
 onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl.value)})
 </script>
 
@@ -903,6 +974,76 @@ onBeforeUnmount(()=>{stopCamera();if(photoUrl.value)URL.revokeObjectURL(photoUrl
             <p><strong>Etapa 4 — comparação em mm:</strong> ainda não disponível. Exige peça física, calibração e alinhamento geométrico.</p>
           </div>
         </div>
+        <section v-if="photoUrl && preview" class="segmentation-compare" aria-label="Comparação experimental de máscaras">
+          <div class="segmentation-compare-heading">
+            <div>
+              <strong>Laboratório de segmentação — OpenCV × SAM 2</strong>
+              <p class="note">E1.4 · Comparação independente do diagnóstico de vazadores. As máscaras são da
+                <b>silhueta externa preenchida</b>, sem medir furos ou identificar numeração.</p>
+            </div>
+            <button type="button" class="button secondary" :disabled="segmentationBusy || busy"
+              @click="runSegmentationComparison">
+              {{segmentationBusy?'Gerando máscaras…':'Comparar máscaras da fotografia'}}
+            </button>
+          </div>
+          <p class="note">O SAM 2 está desativado por padrão; quando não houver modelo configurado, mostramos
+            <strong>indisponível</strong>, nunca uma máscara falsa de IA.
+            Se for ativado, a caixa inicial será obtida pelo OpenCV; portanto os métodos não são independentes.</p>
+          <div v-if="segmentationBusy" class="segmentation-compare-progress" role="status">
+            Solicitando OpenCV e SAM 2 para a mesma fotografia, orientação e configuração de contraste…
+          </div>
+          <div v-if="segmentationComparison" class="segmentation-compare-grid">
+            <article class="segmentation-compare-card">
+              <strong>1 · Fotografia original</strong>
+              <div class="segmentation-image-frame"><img :src="photoUrl" alt="Fotografia original sem sobreposições" /></div>
+              <small>Imagem enviada · referência visual, sem correção dimensional.</small>
+            </article>
+            <article class="segmentation-compare-card">
+              <strong>2 · Máscara OpenCV (baseline)</strong>
+              <div class="segmentation-image-frame" v-if="segmentationMaskSrc(segmentationComparison.opencv.result)">
+                <img :src="segmentationMaskSrc(segmentationComparison.opencv.result)!" alt="Máscara binária OpenCV: branco indica silhueta externa, preto indica fundo" />
+              </div>
+              <div class="segmentation-image-placeholder" v-else role="status">Máscara não disponível.</div>
+              <template v-if="segmentationComparison.opencv.result">
+                <small>Status: {{segmentationComparison.opencv.result.status}} · {{segmentationComparison.opencv.result.elapsed_ms}} ms
+                  · {{segmentationComparison.opencv.result.image_size_px.join(' × ')}} px</small>
+                <small>{{segmentationComparison.opencv.result.warnings[0] || 'Contorno externo aproximado; revisar visualmente.' }}</small>
+              </template>
+              <small v-if="segmentationComparison.opencv.error" class="segmentation-error">
+                {{segmentationComparison.opencv.error}}
+              </small>
+            </article>
+            <article class="segmentation-compare-card">
+              <strong>3 · Máscara SAM 2 (IA opcional)</strong>
+              <div class="segmentation-image-frame" v-if="segmentationMaskSrc(segmentationComparison.sam2.result)">
+                <img :src="segmentationMaskSrc(segmentationComparison.sam2.result)!" alt="Máscara de silhueta externa produzida pelo SAM 2, quando habilitado" />
+              </div>
+              <div class="segmentation-image-placeholder" v-else role="status">
+                {{segmentationComparison.sam2.result?.status==='indisponivel'?'IA indisponível':
+                  segmentationComparison.sam2.result?.status==='inconclusivo'?'IA inconclusiva':'Máscara não disponível'}}
+              </div>
+              <template v-if="segmentationComparison.sam2.result">
+                <small>Status: {{segmentationComparison.sam2.result.status}} · {{segmentationComparison.sam2.result.elapsed_ms}} ms
+                  · {{segmentationComparison.sam2.result.image_size_px.join(' × ')}} px</small>
+                <small>{{segmentationComparison.sam2.result.warnings[0] || 'Sem aviso do modelo.' }}</small>
+                <small v-if="segmentationComparison.sam2.result.prompt_used">
+                  O SAM 2 utilizou uma caixa sugerida pelo OpenCV (segmentação assistida).
+                </small>
+                <small v-if="segmentationComparison.sam2.result.model_version">
+                  Checkpoint: {{segmentationComparison.sam2.result.model_version}}
+                </small>
+              </template>
+              <small v-if="segmentationComparison.sam2.error" class="segmentation-error">
+                {{segmentationComparison.sam2.error}}
+              </small>
+            </article>
+          </div>
+          <p class="note" v-if="segmentationComparison">
+            Branco = silhueta; preto = fundo. Os tempos informados são apenas do processamento,
+            não da rede ou renderização. Estas imagens <b>não avaliam IoU/Dice</b> nem demonstram
+            melhoria da IA sem máscaras humanas revisadas. Nenhum resultado altera a análise CAD atual.
+          </p>
+        </section>
       </section>
       <div v-if="step===3" class="image-next-step">
         <button class="button secondary" @click="selectStep(2)">← Voltar à Etapa 2 (CAD)</button>
