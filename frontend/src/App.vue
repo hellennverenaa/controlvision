@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { createSegmentationComparisonRunner, segmentationMaskSrc, type SegmentationResult, type SegmentationComparison } from './segmentationComparison'
 
 type Feature = { id: string; points: number[][]; center: number[]; shape: 'circular'|'recorte'; suggestion: string; classification: 'pendente'|'vazador'|'referencia'|'ignorar' }
 type Piece = { id: string; name: string; size: string|null; points: number[][]; features: Feature[]; bbox: number[]; area_mm2: number }
@@ -61,15 +62,6 @@ type FamilyProfile = { piece_id: string; size: string; cad_circle_count: number;
   guided_regions?: GuidedRegion[] }
 type FamilyMatching = { status: string; tested_references: number; profiles: FamilyProfile[]; warnings: string[] }
 type Preview = { status: string; contour: number[][]; image_size: number[]; detected_regions: number; mode: 'marks'|'holes'; candidates: PhotoCandidate[]; candidate_count: number; micro_candidates?: MicroSignal[]; micro_candidate_count?: number; micro_signal_quality?: string; micro_signals_per_10000_px2?: number; warnings: string[]; matching?: MatchPreview|null; family_matching?: FamilyMatching|null }
-type SegmentationResult = {
-  schema_version: string; status: 'ok'|'inconclusivo'|'indisponivel'; method: string;
-  image_size_px: number[]; mask_png_base64: string|null; mask_mime_type: string;
-  mask_origin: string; contour_px: number[][]; foreground_pixels: number;
-  elapsed_ms: number; prompt_used: boolean; model_version: string|null;
-  calibrated: boolean; requires_human_review: boolean; warnings: string[]
-}
-type SegmentationPanel = { result: SegmentationResult|null; error: string|null }
-type SegmentationComparison = { opencv: SegmentationPanel; sam2: SegmentationPanel }
 
 
 const catalog = ref<Catalog|null>(null)
@@ -89,16 +81,14 @@ const pieceTone = ref<'dark'|'light'>('dark')
 const lastPhoto = ref<File|null>(null)
 const segmentationComparison = ref<SegmentationComparison|null>(null)
 const segmentationBusy = ref(false)
+const segmentationRunner = createSegmentationComparisonRunner((url, init) => fetch(url, init))
 let segmentationRunId = 0
 function resetSegmentationComparison(): void {
-  // Invalida requisições assíncronas antigas ao trocar foto, tom ou molde.
+  // Invalida requisições antigas ao trocar foto, tom ou molde, mesmo com rede lenta.
   segmentationRunId += 1
+  segmentationRunner.invalidate()
   segmentationComparison.value = null
   segmentationBusy.value = false
-}
-function segmentationMaskSrc(result: SegmentationResult|null): string|null {
-  return result?.status === 'ok' && result.mask_mime_type === 'image/png' &&
-    result.mask_png_base64 ? 'data:image/png;base64,' + result.mask_png_base64 : null
 }
 async function runSegmentationComparison(): Promise<void> {
   const file = lastPhoto.value
@@ -108,37 +98,11 @@ async function runSegmentationComparison(): Promise<void> {
   segmentationComparison.value = null
   const mode = photoMode.value
   const tone = pieceTone.value
-  async function requestMask(method: 'opencv'|'sam2'): Promise<SegmentationPanel> {
-    try {
-      const form = new FormData()
-      form.append('file', file as File)
-      form.append('method', method)
-      form.append('mode', mode)
-      form.append('piece_tone', tone)
-      const response = await fetch('/api/vision/segmentation/preview', {method:'POST',body:form})
-      const result: SegmentationResult | {detail?:string} = await response.json()
-      if (!response.ok) throw new Error('detail' in result ? (result.detail ?? 'Falha na requisição.') : 'Falha na requisição.')
-      const mask = result as SegmentationResult
-      if (mask.schema_version !== '1.0' || mask.method !== (method === 'opencv' ? 'opencv_baseline' : 'sam2_optional') ||
-          !['ok', 'inconclusivo', 'indisponivel'].includes(mask.status) ||
-          !Array.isArray(mask.image_size_px) || mask.image_size_px.length !== 2 ||
-          !Array.isArray(mask.warnings)) {
-        throw new Error('Resposta da segmentação incompatível com o contrato v1.')
-      }
-      // Erro explícito quando a resposta declara sucesso sem uma máscara PNG real.
-      if (mask.status === 'ok' && (!mask.mask_png_base64 || mask.mask_mime_type !== 'image/png')) {
-        throw new Error('A segmentação declarou sucesso, mas não retornou uma máscara PNG.')
-      }
-      return {result:mask,error:null}
-    } catch(e) {
-      return {result:null,error:e instanceof Error ? e.message : 'Erro ao consultar segmentação.'}
-    }
-  }
   try {
-    const [opencv,sam2] = await Promise.all([requestMask('opencv'),requestMask('sam2')])
-    if (runId === segmentationRunId && lastPhoto.value === file &&
+    const comparison = await segmentationRunner.compare(file, mode, tone)
+    if (runId === segmentationRunId && comparison && lastPhoto.value === file &&
         photoMode.value === mode && pieceTone.value === tone) {
-      segmentationComparison.value = {opencv,sam2}
+      segmentationComparison.value = comparison
     }
   } finally {
     if (runId === segmentationRunId) segmentationBusy.value = false
