@@ -4,6 +4,8 @@
 > Atualizado em: **03/11/2026** · Versão do plano: **1.8**  
 > Branch de trabalho: `feat/prototipo-validacao` · Estado: **PROTÓTIPO EXPERIMENTAL — NÃO LIBERA PRODUÇÃO**
 >
+> **Procedimento de entregas GitHub:** ver [`docs/FLUXO_TRABALHO_GITHUB.md`](docs/FLUXO_TRABALHO_GITHUB.md). Cada mudança deve incluir documentação `.md` específica para assuntos novos, atualização deste plano, testes cabíveis, commit e push na branch de validação. **E2.2 permanece pendente da execução local pelo operador.**
+>
 > **Regra de continuidade:** antes de iniciar uma alteração, ler a seção **"Onde estamos agora"**; depois de concluir uma entrega, atualizar as caixas de seleção, as evidências, a data e o histórico deste arquivo **no mesmo conjunto de alterações do código**. Não declarar etapas concluídas apenas porque o código foi escrito: exigir teste e revisão dos resultados.
 
 ## 1. Objetivo do projeto
