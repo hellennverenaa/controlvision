@@ -32,6 +32,7 @@ Construir um sistema de inspeção visual de componentes cortados para calçados
 
 **Fase atual: ETAPA 2 — E2.1 concluída; E2.2 em preparação no computador do operador.**  
 **Última evidência local (03/11/2026):** Ubuntu **26.04.1 LTS**, Python do sistema **3.14.4**; comandos `python3.12`, `python3.11` e `python3.13` não encontrados. **14 GiB de RAM total; apenas 4,2 GiB disponíveis no momento; swap de 4 GiB com 2 GiB em uso.** `nvidia-smi` indisponível (**GPU NVIDIA não confirmada, não é prova de ausência de GPU**). Preflight do SAM 2: desativado, sem torch/torchvision/sam2 ou pesos. **Nenhum modelo real executado.**  
+**Ocorrência de instalação (03/11/2026):** `uv` ainda não encontrado; tentativa de instalação via Snap bloqueada por requisito de `classic confinement` (e tentativa inicial com falha de autenticação). Recomendada instalação standalone oficial da Astral **sem sudo**, registrada em `docs/SAM2_PREPARACAO_E2.md`. **Aguardando confirmação de `uv --version`; nenhuma instalação concluída nem IA executada.**  
 **Próxima ação concreta: E2.2** — criar laboratório **isolado fora do ControlVision**, utilizando `uv` para instalar **Python 3.12 por usuário** e criar `~/Documentos/ambiente_dass/sam2-lab/.venv` (sem modificar o Python 3.14). Só então avaliar bibliotecas CPU-only e checkpoint `tiny`; verificar memória/disco e medir recursos antes da inferência. **Não instalar PyTorch no backend principal e não declarar E2.2 concluída.** Guia: `docs/SAM2_PREPARACAO_E2.md`.
 
 | Etapa | Tema | Estado | Condição para avançar |
