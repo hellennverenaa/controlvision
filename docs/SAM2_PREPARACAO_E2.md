@@ -150,6 +150,75 @@ Os testes estão em `backend/tests/test_sam2_preflight.py` e
 `backend/tests/test_sam2_optional.py`. O executor recusa explicitamente
 checkpoint com nome de variante incompatível, **antes de tentar inferir**.
 
+## Diagnóstico da máquina de laboratório — 03/11/2026
+
+Informações fornecidas pelo operador, sem acesso remoto ao computador:
+
+| Item | Estado observado |
+|---|---|
+| Sistema | Ubuntu **26.04.1 LTS** (Linux) |
+| Python do sistema | **3.14.4**; `python3.11`, `python3.12` e `python3.13` não encontrados no `PATH` |
+| RAM total | **14 GiB** |
+| RAM disponível no momento | **4,2 GiB** (a medida varia com aplicativos abertos) |
+| Swap | **4,0 GiB**, dos quais **2,0 GiB em uso** |
+| NVIDIA | `nvidia-smi` **indisponível**; não demonstra ausência de qualquer GPU |
+| SAM 2 | desativado; não há `torch`, `torchvision`, `sam2` ou checkpoint neste Python |
+| Memória/velocidade do SAM 2 real | **não medidas** |
+
+**Decisão para E2.2:** começar preparando um **Python 3.12 em ambiente isolado**,
+sem alterar/remover o Python 3.14 do Ubuntu. Priorizar **CPU** apenas como
+ensaio de viabilidade (não prometer desempenho), já que nenhuma GPU NVIDIA foi
+confirmada. Antes de executar uma inferência pesada, fechar aplicações que
+estejam consumindo memória e reavaliar `free -h`. Os **4,2 GiB disponíveis**
+e o uso de swap recomendam cautela; a capacidade suficiente para processar
+uma fotografia real ainda não foi comprovada.
+
+### Preparação segura do laboratório (sem instalar SAM 2 por enquanto)
+
+O projeto [uv](https://docs.astral.sh/uv/) permite gerenciar Python 3.12
+para o usuário sem trocar o interpretador do sistema. O laboratório ficará
+**fora da pasta do repositório ControlVision**.
+
+Se `uv --version` funcionar, pule a instalação de `uv`. Caso contrário,
+use o instalador oficial da Astral apenas após conferir sua origem:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+export PATH="$HOME/.local/bin:$PATH"
+uv --version
+```
+
+Depois execute:
+
+```bash
+cd ~/Documentos/ambiente_dass
+uv python install 3.12
+mkdir -p sam2-lab
+uv venv --python 3.12 sam2-lab/.venv
+source sam2-lab/.venv/bin/activate
+python --version
+which python
+free -h
+```
+
+**O esperado nesta fase:** `Python 3.12.x` e um caminho terminado em
+`sam2-lab/.venv/bin/python`; nenhuma biblioteca de IA foi instalada ainda.
+Não executar `sudo apt install python3.12` como primeira opção no Ubuntu
+26.04, pois isso envolveria alterar pacotes de sistema. Não usar
+`pip install` fora do ambiente virtual. Não carregar o checkpoint nesta etapa.
+
+A instalação futura de PyTorch/torchvision será **CPU-only** e deve seguir
+o seletor oficial de versões compatíveis em
+https://pytorch.org/get-started/locally/ ; a instalação SAM 2 deve seguir
+https://github.com/facebookresearch/sam2/blob/main/INSTALL.md com
+`SAM2_BUILD_CUDA=0` quando apropriado. Não há necessidade de escolher
+ou instalar CUDA sem GPU confirmada. Confirmar **espaço em disco disponível**
+com `df -h` antes de baixar pesos e bibliotecas.
+
+**Status do plano:** E2.2 **em preparação; não concluída**. A escolha de
+Python 3.12 é conservadora para reduzir possíveis incompatibilidades de
+bibliotecas de IA; não indica que o Python 3.14 esteja incorreto.
+
 ## Roteiro para a próxima etapa (E2.2)
 
 1. Criar um **ambiente Python separado** do backend habitual, com versões
