@@ -1,7 +1,7 @@
 # PLANO DE DESENVOLVIMENTO — ControlVision
 
 > **Documento vivo e fonte principal de acompanhamento do projeto.**  
-> Atualizado em: **03/11/2026** · Versão do plano: **1.7**  
+> Atualizado em: **03/11/2026** · Versão do plano: **1.8**  
 > Branch de trabalho: `feat/prototipo-validacao` · Estado: **PROTÓTIPO EXPERIMENTAL — NÃO LIBERA PRODUÇÃO**
 >
 > **Regra de continuidade:** antes de iniciar uma alteração, ler a seção **"Onde estamos agora"**; depois de concluir uma entrega, atualizar as caixas de seleção, as evidências, a data e o histórico deste arquivo **no mesmo conjunto de alterações do código**. Não declarar etapas concluídas apenas porque o código foi escrito: exigir teste e revisão dos resultados.
@@ -29,8 +29,8 @@ Construir um sistema de inspeção visual de componentes cortados para calçados
 ## 2. Onde estamos agora
 
 **Fase atual: ETAPA 2 — E2.1 concluída; E2.2 em preparação no computador do operador.**  
-**Última evidência local (03/11/2026):** `python3 -m app.sam2_preflight` executou em **Linux / Python 3.14**, retornando `status=desativado`, `enabled=false`, sem `torch`, `torchvision`, `sam2` e sem checkpoint; dispositivo configurado `cpu` (isso **não** comprova ausência de GPU). **Nenhum peso real executado.**  
-**Próxima ação concreta: E2.2** — verificar disponibilidade de Python 3.12/3.11, GPU NVIDIA e RAM; escolher ambiente virtual isolado e versões compatíveis **antes de instalar bibliotecas pesadas**. PyTorch recente suporta Python 3.14, mas o conjunto SAM 2 + torchvision + ambiente local ainda precisa de validação. Guia: `docs/SAM2_PREPARACAO_E2.md`. O fluxo OpenCV continua intacto.
+**Última evidência local (03/11/2026):** Ubuntu **26.04.1 LTS**, Python do sistema **3.14.4**; comandos `python3.12`, `python3.11` e `python3.13` não encontrados. **14 GiB de RAM total; apenas 4,2 GiB disponíveis no momento; swap de 4 GiB com 2 GiB em uso.** `nvidia-smi` indisponível (**GPU NVIDIA não confirmada, não é prova de ausência de GPU**). Preflight do SAM 2: desativado, sem torch/torchvision/sam2 ou pesos. **Nenhum modelo real executado.**  
+**Próxima ação concreta: E2.2** — criar laboratório **isolado fora do ControlVision**, utilizando `uv` para instalar **Python 3.12 por usuário** e criar `~/Documentos/ambiente_dass/sam2-lab/.venv` (sem modificar o Python 3.14). Só então avaliar bibliotecas CPU-only e checkpoint `tiny`; verificar memória/disco e medir recursos antes da inferência. **Não instalar PyTorch no backend principal e não declarar E2.2 concluída.** Guia: `docs/SAM2_PREPARACAO_E2.md`.
 
 | Etapa | Tema | Estado | Condição para avançar |
 |---|---|---|---|
@@ -208,7 +208,8 @@ Adicionar uma linha por rodada relevante. Se não houver dados, escrever **"não
 | 03/11/2026 | E1.6 — avaliação de silhuetas com máscara humana | IoU, Dice, distância simétrica média/p95 de borda, tempo e estado de falha, interface/API com PNG binário e confirmação de revisão | **Backend e frontend aprovados com testes sintéticos**, imagem real não avaliada; nenhuma métrica de IA real ou conclusão metrológica | [CI](https://github.com/hellennverenaa/controlvision/actions/runs/41673813764); `docs/SEGMENTACAO_METRICAS.md` |
 | 03/11/2026 | E2.1 — revisão SAM 2.1 e preflight local | Meta Apache-2.0, Python ≥3.10, torch ≥2.5.1, torchvision compatível; checkpoint `tiny` e variantes oficiais; checagem de pacote e nome de pesos sem execução | Backend e frontend aprovados; **pesos não baixados, IA real não executada, GPU/memória/latência/custo não medidos** | [CI](https://github.com/hellennverenaa/controlvision/actions/runs/41675036555); `backend/tests/test_sam2_preflight.py`; `docs/SAM2_PREPARACAO_E2.md`; **próxima: E2.2** |
 
-| 03/11/2026 | Diagnóstico local E2.2 no Linux do operador | `python3 -m app.sam2_preflight` | Python **3.14**, IA **desativada**, `torch`/`torchvision`/`sam2` ausentes e checkpoint não configurado. Dispositivo selecionado: `cpu`; GPU física não verificada. **Nenhuma inferência executada.** | Resultado textual informado pelo operador, não contém fotografia, não armazenado no GitHub; verificar opções de Python, GPU e RAM antes de instalar dependências. |
+| 03/11/2026 | Diagnóstico local E2.2 no Linux do operador | `python3 -m app.sam2_preflight` | Python **3.14**, IA **desativada**, `torch`/`torchvision`/`sam2` ausentes e checkpoint não configurado. Dispositivo selecionado: `cpu`; GPU física não verificada. **Nenhuma inferência executada.** | Resultado textual informado pelo operador; verificar opções de Python, GPU e RAM antes de instalar dependências. |
+| 03/11/2026 | Inventário de hardware E2.2 | `cat /etc/os-release`, `free -h`, alternativas Python e `nvidia-smi` | Ubuntu **26.04.1**, Python **3.14.4**, 14 GiB RAM total, **4,2 GiB disponíveis**, **2/4 GiB de swap em uso**, `python3.12/3.11/3.13` ausentes, NVIDIA **não confirmada**. Desempenho do SAM 2 **não medido**. | **Decisão:** laboratório Python 3.12 independente via `uv`; uso de CPU apenas como teste conservador, sem downloads pesados até preparar ambiente. `docs/SAM2_PREPARACAO_E2.md`; **E2.2 aberta**. |
 
 **Modelo para novos registros:** `AAAA-MM-DD | conjunto/fotos e quantidade de peças físicas | método/versão | métricas + casos falhos | commit/PR/teste + decisão`.
 
@@ -252,9 +253,10 @@ Adicionar uma linha por rodada relevante. Se não houver dados, escrever **"não
 | 03/11/2026 | E1.6: métricas de silhueta humana (IoU/Dice e bordas em px), API/GUI opt-in, indisponibilidade sem pontuação, testes sintéticos e CI aprovado | **ETAPA 1 concluída no código** |
 | 03/11/2026 | E2.1: licença/requisitos oficiais, checklists de CPU/GPU e pareamento de checkpoint, preflight sem inferência, bloqueio de variante incompatível e testes aprovados | **E2.1 concluída** |
 | 03/11/2026 | E2.2: primeiro diagnóstico do Linux do operador — Python 3.14, SAM 2 desligado, bibliotecas e checkpoint ausentes | **Ambiente local ainda não preparado; E2.2 aberta** |
+| 03/11/2026 | Inventário detalhado do hardware (RAM/swap/Ubuntu/GPU não confirmada); instruções verificadas para criar Python 3.12 isolado com `uv` sem alterar Python do sistema | **E2.2 segue em preparação; sem inferência real** |
 
 ---
 
 **Referências dentro do repositório:** `README.md` (estado e execução do protótipo), `docs/VALIDACAO.md` (matriz de validação), `backend/app/vision.py` (baseline OpenCV), `backend/app/matching.py` e `backend/app/family_matching.py` (correspondência CAD), `backend/app/texture_anomalies.py` (análise óptica exploratória), `docs/SAM2_PREPARACAO_E2.md` e `backend/app/sam2_preflight.py` (verificação SAM 2.1).
 
-**Próximo item obrigatório: E2.2 — conferir GPU, RAM e Python alternativo do Linux; preparar venv isolada antes de instalar SAM 2.1 tiny e executar a primeira foto real.**
+**Próximo item obrigatório: E2.2 — preparar `sam2-lab/.venv` com Python 3.12 via uv; conferir RAM/disco e depois testar torch CPU-only + SAM 2.1 tiny oficial, sem alterar o backend principal.**
