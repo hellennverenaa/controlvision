@@ -9,6 +9,7 @@ from starlette.concurrency import run_in_threadpool
 from .geometry import read_cad
 from .vision import analyze_image
 from .segmentation_contract import segment_opencv_baseline
+from .segmentation_evaluation import read_reviewed_reference, evaluate_methods_against_reference, MAX_EVALUATION_PIXELS
 from .sam2_optional import segment_sam2_optional
 from .microholes import inspect_marked_regions
 from .annotation_comparison import compare_annotations
@@ -72,6 +73,51 @@ async def segmentation_preview(
                 segment_sam2_optional, image, mode=mode, piece_tone=piece_tone
             )
         return segment_opencv_baseline(image, mode=mode, piece_tone=piece_tone)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+@app.post("/api/vision/segmentation/evaluate")
+async def segmentation_evaluate(
+    file: UploadFile = File(...),
+    reference_mask: UploadFile = File(...),
+    reference_reviewed: bool = Form(False),
+    mode: str = Form("holes"),
+    piece_tone: str = Form("light"),
+):
+    """Avaliação E1.6 SOMENTE contra máscara externa declarada revisada.
+
+    Não armazena fotografia, máscara ou resultado no servidor. Recalcula
+    ambos os métodos a partir da MESMA imagem e mesma configuração.
+    """
+    if not reference_reviewed:
+        raise HTTPException(422, "Confirme revisão humana da máscara antes da avaliação.")
+    if mode not in ("holes", "marks") or piece_tone not in ("dark", "light"):
+        raise HTTPException(422, "Modo ou tom inválido.")
+    raw = await file.read(15_000_001)
+    reference_raw = await reference_mask.read(15_000_001)
+    if len(raw) > 15_000_000 or len(reference_raw) > 15_000_000:
+        raise HTTPException(413, "Fotografia ou máscara excede 15 MB.")
+    image = cv2.imdecode(np.frombuffer(raw, dtype=np.uint8), cv2.IMREAD_COLOR)
+    if image is None:
+        raise HTTPException(422, "Fotografia inválida.")
+    height, width = image.shape[:2]
+    if height * width > MAX_EVALUATION_PIXELS:
+        raise HTTPException(422, "Avaliação limitada a imagens de até 8 megapixels.")
+    try:
+        reference = read_reviewed_reference(
+            reference_raw, image_shape=(height, width),
+            filename=reference_mask.filename or "",
+        )
+        baseline = await run_in_threadpool(
+            segment_opencv_baseline, image, mode=mode, piece_tone=piece_tone
+        )
+        optional_ia = await run_in_threadpool(
+            segment_sam2_optional, image, mode=mode, piece_tone=piece_tone
+        )
+        return evaluate_methods_against_reference(
+            reference, opencv_result=baseline, sam2_result=optional_ia,
+        )
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
 
