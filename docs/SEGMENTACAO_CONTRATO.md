@@ -92,7 +92,7 @@ fotos reais, máscaras proprietárias nem pesos treinados no GitHub público.**
   experimental e regressão do detector atual.
 - **E1.2:** preservar OpenCV como padrão; nenhuma rota anterior alterada.
 - **E1.3 (conectada):** executor de IA opt-in em `backend/app/sam2_optional.py`. O SAM 2 utiliza **uma caixa derivada do contorno OpenCV** como prompt; logo a comparação futura **não será independente**. A execução ocorre em uma thread de trabalho da API, mas não em um processo separado; isolamento de processo ainda não foi implementado. A evidência de execução com pesos reais permanece pendente para E2.
-- **E1.4:** comparar máscaras lado a lado no Vue (ainda não implementado).
+- **E1.4 (interface implementada):** na Etapa 3 da aplicação Vue, após analisar uma fotografia, clique em **Comparar máscaras da fotografia**. A interface consulta `POST /api/vision/segmentation/preview` com `method=opencv` e `method=sam2` usando **o mesmo arquivo e tom selecionado**, e apresenta lado a lado **fotografia sem sobreposição**, **máscara OpenCV** e **máscara SAM 2**. Se o SAM 2 estiver desativado ou falhar, o painel exibe `indisponivel`/`inconclusivo` com o aviso, sem imagem inventada. A comparação é manual (opt-in), não altera o processamento padrão e descarta respostas antigas quando a fotografia, tom ou molde mudam. A compilação TypeScript/Vue passou; **não foram avaliadas máscaras reais do SAM 2**.
 - **E1.5:** testes de configuração, pesos ausentes, dependências e máscaras simuladas adicionados (`backend/tests/test_sam2_optional.py`); a etapa ampla permanece pendente até o ensaio com o frontend e pesos reais.
 - **E1.6:** definir protocolo IoU/Dice, erro de borda, latência e falhas
   com máscaras humanas revisadas.
