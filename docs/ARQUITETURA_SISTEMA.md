@@ -72,3 +72,12 @@ Não enviar moldes/fotos de fábrica para serviços externos de IA sem aprovaç�
 5. Calibração, validação industrial e implantação, só após resultados.
 
 Detalhes em [Dados e avaliação](DADOS_TREINAMENTO_VALIDACAO.md), [Plano mestre](../PLANO_DESENVOLVIMENTO.md) e [Proposta de IA sob demanda](ARQUITETURA_IA_SOB_DEMANDA.md).
+
+
+## F. Duas funções de IA — divisão de responsabilidades (04/11/2026)
+
+**Função IA 1 — reconhecimento:** segmentar/interpretar a silhueta e auxiliar a identificação da família/modelo; a associação com a referência CAD, numeração e ambiguidade permanece apoiada em geometria, escala válida quando houver e possibilidade de `desconhecido`. Não substituir CAD por um classificador de numeração sem evidência.
+
+**Função IA 2 — inspeção especializada:** examinar vazadores passantes minúsculos e recortes em patches da resolução original, aprendendo a distinguir a trama normal de cortes reais; combinar ROIs projetadas pelo CAD com busca global de aberturas extras/deslocadas. O resultado inclui `inconclusivo`, não é decisão de conformidade.
+
+Essas são **duas capacidades propostas**, não promessa de apenas duas redes neurais. SAM 2 permanece candidato auxiliar para máscaras/anotação; a quantidade, arquitetura e versões definitivas dos modelos dependem de validação. **Nenhuma dessas duas IAs foi treinada, implantada ou inferida em produção.**

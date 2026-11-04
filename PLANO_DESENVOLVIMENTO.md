@@ -28,6 +28,8 @@ O produto será **web, acessado em vários computadores da produção**, com cab
 
 **P0 — novas evidências de orientação e microtrama (04/11/2026):** capturas da interface mostraram duas máscaras externas OpenCV `ok` (23,7 ms e 21,08 ms, 960×1280); SAM 2 indisponível. Busca global exibiu **100 candidatos circulares** em uma rodada e **15** em outra diante de **3 geometrias circulares por CAD**; no relatório da primeira rodada **0/3** proximidades ilustrativas, **9 referências** sem numeração identificada, **0/0 marcações humanas**. Esses números **não comprovam detecção nem ausência de furos** e não medem desempenho industrial. Próxima prioridade: **marcar os três vazadores reais na foto original com verificação física individual e avaliar distâncias a centros CAD em pixels**, preservando estados incertos quando não confirmados. Ver [evidências da lingueta](docs/EVIDENCIAS_TESTES_LINGUETA_ANTERIORES.md). **Nenhum teste automatizado foi executado nesta atualização exclusivamente documental.**
 
+**P0 — nova evidência humana (04/11/2026):** três marcações M01/M02/M03 declaradas fisicamente confirmadas na interface; **2 de 3** com candidato automático até 12 px (**66,7% experimental em uma imagem**), M02 sem candidato, **13 candidatos adicionais não revisados**. Centros CAD projetados a **1,6 / 1,6 / 5,1 px** das marcações, sem metrologia nem identificação definitiva de numeração. Evidência: [testes da lingueta](docs/EVIDENCIAS_TESTES_LINGUETA_ANTERIORES.md). **Estratégia de IA explicitada:** função 1 reconhecimento/segmentação + associação geométrica CAD; função 2 inspeção de vazadores/recortes contra trama normal, com ROIs CAD e busca global. São capacidades futuras, modelos ainda não treinados. Próximo: registro e avaliação reproduzível dos pontos de referência em dados privados. **P0 não concluído.**
+
 ## Roadmap e critérios
 
 | Fase | Escopo | Estado em 04/11/2026 | Critério de conclusão |
@@ -72,6 +74,7 @@ As etapas podem ter **experimentos paralelos**; P0 foi priorizado antes de inves
 
 ## Registro condensado de decisões
 
+- 04/11: confirmação visual de 3 pontos físicos pela interface; 2/3 correspondências ópticas, M02 não detectado; duas funções de IA documentadas (reconhecimento e inspeção). Sem modelo treinado.
 - 04/11: validador offline e manifesto sintético P0.1 adicionados; `pytest 9.2.0` instalado no backend local, **7 testes P0 e 140 testes da suíte backend aprovados**. Ainda sem inspeção real.
 
 - 19–23/10: protótipo de CAD/visão, comparação visual e laboratório de máscaras começaram; etapas 1.1–1.3 concluídas em código.
