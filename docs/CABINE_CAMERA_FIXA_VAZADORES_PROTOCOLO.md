@@ -67,3 +67,10 @@ Para treinar detecção supervisionada, rótulos de defeito precisam vir de **in
 **Estado atual:** requisitos esclarecidos; P0 e treinamento **não executados**; nenhuma foto publicada; sem calibração, tolerância industrial ou liberação de produção.
 
 **Documentos relacionados:** [pesquisa de IA](PESQUISA_IA_INSPECAO_TRAMAS_CAD_2026-11-04.md), [arquitetura de IA](ARQUITETURA_IA_SOB_DEMANDA.md), [plano mestre](../PLANO_DESENVOLVIMENTO.md).
+
+
+## Estado da cabine confirmado em 04/11/2026
+
+A cabine fisica ja existe, mas a camera ainda nao foi instalada nem escolhida. A escolha do dispositivo sera feita em fase posterior, apos levantar os requisitos de resolucao, iluminacao, estabilidade e repetibilidade. Os ensaios anteriores foram feitos com fotografias exploratorias e nao validam a captura final na cabine.
+
+O resultado historico da lingueta, incluindo a segmentacao OpenCV e os candidatos confundidos com a trama, esta em `docs/EVIDENCIAS_TESTES_LINGUETA_ANTERIORES.md`. Os ensaios com luz frontal e contraluz seguem propostos, nao executados na cabine.
