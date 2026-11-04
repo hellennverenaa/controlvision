@@ -34,6 +34,8 @@ O produto será **web, acessado em vários computadores da produção**, com cab
 
 **P0/IA 2 — testes locais confirmados (04/11/2026):** operador executou `tests/test_p0_patch_dataset.py`: **8 passed in 0.14s**. Informou `cp --update=none` do modelo de anotações sintéticas para a pasta privada; a cópia não sobrescreve destino existente, devendo conferir o conteúdo antes de usar. Ainda **não foram confirmadas as coordenadas na foto F01 nem extraídos patches reais**. Próximo: conferir fotografia, resolução e anotações; não treinar nem marcar P0 concluído. [Procedimento](docs/P0_IA2_RECORTE_REFERENCIAS.md).
 
+**P0/IA 2 — foto F01 e anotação sintética verificadas (04/11/2026):** operador confirmou existência e decodificação de `WhatsApp Image 2026-10-20 at 16.20.56 (1).jpeg`, **960×1280 px**. `anotacoes.json` privado ainda era exemplo com `M01/T01` e identificador sintético; dimensão igual não prova que seja a fotografia das três marcações M01/M02/M03. **Próximo:** conferir visualmente identidade da F01, criar rascunho privado com três coordenadas e revisão física pendente (`false`), somente então confirmar rótulos e extrair patches. Não há dataset nem treinamento concluídos. [Guia IA 2](docs/P0_IA2_RECORTE_REFERENCIAS.md).
+
 ## Roadmap e critérios
 
 | Fase | Escopo | Estado em 04/11/2026 | Critério de conclusão |

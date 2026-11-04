@@ -54,3 +54,12 @@ O operador executou `backend/.venv/bin/python -m pytest -q tests/test_p0_patch_d
 Confirmou também a cópia do exemplo `docs/exemplos/p0_anotacoes_sinteticas.json` para `controlvision-dados-privados/ensaio-001/anotacoes.json` por meio de `cp --update=none`. **A ausência de erro de `cp` não comprova que o arquivo de destino foi substituído, pois a opção não sobrescreve destinos já existentes.** Verificar conteúdo antes de editar.
 
 **Não extrair patches ainda:** as coordenadas do exemplo são sintéticas. É necessário verificar que a fotografia F01 corresponde exatamente à usada nas marcações M01 (825,6; 590,8), M02 (823,7; 719,5) e M03 (240,5; 634,2), além de confirmar as dimensões originais e a relação com o relato físico. Somente então preencher anotações privadas revisadas, sem publicá-las. **Sem exportação real de patches nem modelo treinado.**
+
+
+## Conferência de F01 e estado das anotações — 04/11/2026
+
+O operador verificou localmente, com OpenCV, que o manifesto `ensaio-001` aponta para a fotografia `WhatsApp Image 2026-10-20 at 16.20.56 (1).jpeg`, que **existe e abre com resolução 960 × 1280 px**. O arquivo privado `anotacoes.json` contém **somente o exemplo sintético**: IDs `['M01', 'T01']` e `peca_fisica_id=EXEMPLO_SINTETICO_NAO_USAR_EM_PRODUCAO`.
+
+**Decisão:** o tamanho da foto é compatível com o relato anterior, mas **não comprova identidade da captura** usada para M01 (825,6; 590,8), M02 (823,7; 719,5), M03 (240,5; 634,2). É necessária conferência visual da fotografia e correspondência dos furinhos antes de marcar os pontos `revisado_por_pessoa=true` e `existencia_fisica_confirmada=true` na anotação privada. A cópia da interface em conversa não preenche automaticamente o manifesto.
+
+**Orientação local:** criar backup do `anotacoes.json` sintético, produzir rascunho privado de três pontos com identificador de peça correto e flags `false`; **não executar extração** enquanto os pontos não forem conferidos na exata fotografia F01. Rótulos de trama normal também exigem seleção humana posterior. Sem dataset real exportado, sem treinamento e sem comprovação metrológica.
