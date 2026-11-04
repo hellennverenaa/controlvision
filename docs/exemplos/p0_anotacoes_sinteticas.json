@@ -1,0 +1,23 @@
+{
+  "schema_version": "p0-patches.1",
+  "foto_id": "F01",
+  "peca_fisica_id": "EXEMPLO_SINTETICO_NAO_USAR_EM_PRODUCAO",
+  "pontos": [
+    {
+      "id": "M01",
+      "x": 50,
+      "y": 50,
+      "classe": "vazador_confirmado",
+      "revisado_por_pessoa": true,
+      "existencia_fisica_confirmada": true
+    },
+    {
+      "id": "T01",
+      "x": 100,
+      "y": 100,
+      "classe": "trama_normal_revisada",
+      "revisado_por_pessoa": true,
+      "existencia_fisica_confirmada": false
+    }
+  ]
+}

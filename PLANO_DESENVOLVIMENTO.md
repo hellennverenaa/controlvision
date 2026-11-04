@@ -30,6 +30,8 @@ O produto será **web, acessado em vários computadores da produção**, com cab
 
 **P0 — nova evidência humana (04/11/2026):** três marcações M01/M02/M03 declaradas fisicamente confirmadas na interface; **2 de 3** com candidato automático até 12 px (**66,7% experimental em uma imagem**), M02 sem candidato, **13 candidatos adicionais não revisados**. Centros CAD projetados a **1,6 / 1,6 / 5,1 px** das marcações, sem metrologia nem identificação definitiva de numeração. Evidência: [testes da lingueta](docs/EVIDENCIAS_TESTES_LINGUETA_ANTERIORES.md). **Estratégia de IA explicitada:** função 1 reconhecimento/segmentação + associação geométrica CAD; função 2 inspeção de vazadores/recortes contra trama normal, com ROIs CAD e busca global. São capacidades futuras, modelos ainda não treinados. Próximo: registro e avaliação reproduzível dos pontos de referência em dados privados. **P0 não concluído.**
 
+**P0/IA 2 — preparação de patches com rótulos humanos (04/11/2026):** criado `backend/app/p0_patch_dataset.py` e teste sintético para exportar **somente no armazenamento privado**, em resolução original, recortes de vazadores fisicamente confirmados e de trama normal revisada. Não há autoatribuição de rótulos, treinamento ou avaliação real. [Procedimento](docs/P0_IA2_RECORTE_REFERENCIAS.md). **Próximo passo:** verificar correspondência exata entre coordenadas M01–M03 e foto F01, criar `anotacoes.json` privado e executar testes/exportação na máquina do operador; sem forçar rótulos nem considerar P0 concluído. **Testes desta entrega ainda não executados pelo operador.**
+
 ## Roadmap e critérios
 
 | Fase | Escopo | Estado em 04/11/2026 | Critério de conclusão |
@@ -58,7 +60,7 @@ As etapas podem ter **experimentos paralelos**; P0 foi priorizado antes de inves
 - [ ] Determinar se o **menor furo** aparece com contraste e pixels suficientes, evitando confusão com a trama; não inventar diâmetro em mm.
 - [ ] Criar máscara humana revisada e comparar com OpenCV; registrar IoU/Dice apenas com essa referência.
 - [x] Definir esquema inicial de rótulos e validador offline para o manifesto P0 (somente código/testes sintéticos; **nenhum registro real preenchido**).
-- [ ] Formar dataset privado com divisões por peça física e anotações revisadas.
+- [ ] Formar dataset privado com divisões por peça física e anotações revisadas; ferramenta P0/IA2 para extração de crops implementada, mas exportação real pendente.
 - [ ] Decidir próximo experimento (SAM 2 para máscara, classificador de patches de vazadores, ou melhoria óptica), com evidências.
 
 **Protocolo:** [Cabine](docs/CABINE_CAMERA_FIXA_VAZADORES_PROTOCOLO.md) · [Treino e avaliação](docs/DADOS_TREINAMENTO_VALIDACAO.md).

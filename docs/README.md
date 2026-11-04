@@ -14,6 +14,7 @@
 
 - [Cabine fixa e protocolo de furos passantes](CABINE_CAMERA_FIXA_VAZADORES_PROTOCOLO.md)
 - [Evidências anteriores da lingueta](EVIDENCIAS_TESTES_LINGUETA_ANTERIORES.md)
+- [P0 / IA 2 — extração privada de patches](P0_IA2_RECORTE_REFERENCIAS.md)
 - [Pesquisa de modelos e projetos públicos](PESQUISA_IA_INSPECAO_TRAMAS_CAD_2026-11-04.md)
 
 ## Referências técnicas ainda válidas

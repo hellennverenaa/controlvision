@@ -57,3 +57,8 @@ O repositório GitHub é público. Fotos, recortes, máscaras associadas a molde
 ## Registro inicial estruturado P0.1
 
 Foi implementado um **validador de metadados offline** (não detector de furos): [Guia de registro P0](P0_REGISTRO_PRIVADO.md). O exemplo versionado é sintético; nenhuma foto, CAD real, avaliação física ou conjunto de treinamento foi enviado. Esse esquema permite preparar registros privados revisados, mas não substitui anotação de pixels ou comprovação óptica.
+
+
+## Preparação de recortes para a IA 2 — P0
+
+Existe agora um extrator offline de patches (positivos fisicamente confirmados e negativos humanos revisados), mantendo resolução original sem resize e gravação em pasta privada. [Procedimento e limitações](P0_IA2_RECORTE_REFERENCIAS.md). **Ainda não foi criado um conjunto real nem treinado modelo**. Os exemplos do repositório são sintéticos; não associar automaticamente pontos da interface a uma foto diferente.
