@@ -56,3 +56,12 @@ O teste de importação (`import torch, torchvision`, versões, CUDA e tensor) f
 ## Decisão pendente e próximo passo
 
 **Suspender novos downloads** até escolher onde a IA será executada e confirmar a política para dados industriais. Não apagar o laboratório criado nem marcar E2.2 concluída. Se houver necessidade de continuar a prova de conceito local, repetir primeiro teste mínimo de importação sem interrupção, com limite operacional de tempo e monitoramento; a alternativa é ensaio em ambiente de servidor próprio. Registrar decisão e resultados no plano mestre.
+
+
+## Complemento — aplicação web na produção e diferenciação por tarefa (04/11/2026)
+
+O operador confirmou que o ControlVision será **web, online e acessado por vários computadores da produção**. Também forneceu três fotografias de malha branca sobre fundo azul, em diferentes orientações, para ilustrar que textura normal pode parecer pequenos vazadores. **Não versionar essas fotografias no GitHub público.**
+
+A direção técnica evolui de um único serviço de segmentação para um **pipeline de três tarefas separadas**: (1) máscara da peça, (2) ranking de família/referência CAD com possibilidade de `não identificado`, (3) inspeção de microvazadores e recortes com crops de alta resolução e análise global independente. As tarefas podem compartilhar um serviço de inferência, mas têm métricas, rótulos e critérios de indisponibilidade diferentes.
+
+**Preferência de implantação proposta:** frontend web + FastAPI e workers IA com fila em servidor controlado, sem instalar IA nos computadores operadores. A implantação e o treinamento **não foram implementados**, e nenhuma GPU/serviço final foi escolhida. Para detalhes, fontes GitHub e plano de experimentos, ver [pesquisa aplicada de 04/11/2026](PESQUISA_IA_INSPECAO_TRAMAS_CAD_2026-11-04.md). E2.2 segue aberta; priorizar definição de protocolo ótico e dados privados antes de investir em treinamento.
