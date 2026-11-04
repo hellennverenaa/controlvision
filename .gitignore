@@ -1,0 +1,27 @@
+node_modules/
+frontend/dist/
+frontend/.vite/
+.venv/
+backend/.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.env
+*.db
+*.dxf
+*.hpgl
+*.plt
+*.hp2
+*.png
+*.jpg
+*.jpeg
+samples/private/
+
+# Modelos e datasets locais da fábrica (NÃO versionar pesos/imagens)
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+backend/models/
+models/private/
+datasets/private/

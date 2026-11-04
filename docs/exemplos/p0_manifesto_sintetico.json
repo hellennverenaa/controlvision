@@ -1,0 +1,24 @@
+{
+  "schema_version": "p0.1",
+  "peca_fisica_id": "EXEMPLO_SINTETICO_NAO_USAR_EM_PRODUCAO",
+  "material": "malha_exemplo",
+  "cad_revisao": "REV_EXEMPLO",
+  "revisor": "REVISOR_EXEMPLO",
+  "cad_arquivo": "cad/arquivo_exemplo.dxf",
+  "fotografias": [
+    {
+      "id": "F01",
+      "arquivo": "fotos/frontal_exemplo.jpg",
+      "iluminacao": "frontal",
+      "original_sem_overlay": true
+    }
+  ],
+  "geometrias": [
+    {
+      "cad_feature_id": "V01",
+      "tipo": "vazador",
+      "estado_fisico": "incerto",
+      "verificado_fisicamente": false
+    }
+  ]
+}
