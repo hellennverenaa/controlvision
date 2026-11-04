@@ -35,12 +35,16 @@ As etapas podem ter **experimentos paralelos**; P0 foi priorizado antes de inves
 
 ## Próxima entrega prática (P0)
 
+**Infraestrutura P0.1 implementada (04/11/2026):** `backend/app/p0_manifest.py` valida metadados privados, identificadores, estados de revisão física e caminhos relativos; exemplo exclusivamente sintético em `docs/exemplos/`, testes unitários em `backend/tests/test_p0_manifest.py`. **Isso não significa ensaio real executado.** Guia: [Registro P0](docs/P0_REGISTRO_PRIVADO.md).
+
+
 - [ ] Selecionar **uma lingueta física** e sua referência CAD/revisão em armazenamento privado.
 - [ ] Identificar no CAD os vazadores passantes e recortes; confirmar **fisicamente** cada região, separando `aberto`, `incompleto/ausente` e `incerto`.
 - [ ] Registrar fotos originais sem overlays, iluminação atual e, se viável, teste controlado com contraluz; **não publicar arquivos da fábrica**.
 - [ ] Determinar se o **menor furo** aparece com contraste e pixels suficientes, evitando confusão com a trama; não inventar diâmetro em mm.
 - [ ] Criar máscara humana revisada e comparar com OpenCV; registrar IoU/Dice apenas com essa referência.
-- [ ] Definir rótulos, partição por peça física e plano inicial de dataset privado.
+- [x] Definir esquema inicial de rótulos e validador offline para o manifesto P0 (somente código/testes sintéticos; **nenhum registro real preenchido**).
+- [ ] Formar dataset privado com divisões por peça física e anotações revisadas.
 - [ ] Decidir próximo experimento (SAM 2 para máscara, classificador de patches de vazadores, ou melhoria óptica), com evidências.
 
 **Protocolo:** [Cabine](docs/CABINE_CAMERA_FIXA_VAZADORES_PROTOCOLO.md) · [Treino e avaliação](docs/DADOS_TREINAMENTO_VALIDACAO.md).
@@ -55,6 +59,8 @@ As etapas podem ter **experimentos paralelos**; P0 foi priorizado antes de inves
 6. PR #1 em rascunho; não mesclar `main` sem revisão.
 
 ## Registro condensado de decisões
+
+- 04/11: validador offline e manifesto sintético P0.1 adicionados para registrar CAD/fotos/estados físicos em armazenamento privado, sem executar inspeção real.
 
 - 19–23/10: protótipo de CAD/visão, comparação visual e laboratório de máscaras começaram; etapas 1.1–1.3 concluídas em código.
 - 03/11: UI de comparação, testes de contratos e protocolo de métricas E1.4–E1.6; Python 3.12 isolado planejado e criado.

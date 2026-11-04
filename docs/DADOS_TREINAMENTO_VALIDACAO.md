@@ -52,3 +52,8 @@ O repositório GitHub é público. Fotos, recortes, máscaras associadas a molde
 - [ ] Registrar limites e decisão do próximo modelo a avaliar.
 
 **Três fotos antigas e relatório anterior são indícios do problema, não um dataset de treino.** Consulte [Evidência histórica da lingueta](EVIDENCIAS_TESTES_LINGUETA_ANTERIORES.md).
+
+
+## Registro inicial estruturado P0.1
+
+Foi implementado um **validador de metadados offline** (não detector de furos): [Guia de registro P0](P0_REGISTRO_PRIVADO.md). O exemplo versionado é sintético; nenhuma foto, CAD real, avaliação física ou conjunto de treinamento foi enviado. Esse esquema permite preparar registros privados revisados, mas não substitui anotação de pixels ou comprovação óptica.
