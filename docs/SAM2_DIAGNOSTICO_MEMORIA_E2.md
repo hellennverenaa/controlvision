@@ -88,3 +88,31 @@ vmstat 1 5
 **Decisão:** não iniciar inferência ou instalar dependências pesadas nesta sessão com apenas 3,2 GiB disponíveis. Solicitar ao operador salvar a sessão e **encerrar normalmente** o Firefox quando for conveniente, sem `kill`/`swapoff`, e então colher `free -h` e `ps -eo pid,comm,%mem,rss --sort=-rss | head -n 10`. Como alternativa, usar gerenciador de tarefas do Firefox (`about:processes`) para identificar abas/processos de alto consumo antes de fechá-las. A eventual recuperação da memória será medida, não presumida. Só depois decidir pela instalação experimental CPU-only.
 
 **Estado:** coleta de memória repetida; melhoria parcial confirmada, mas pré-requisitos de execução real do SAM 2.1 tiny e E2.2 seguem **pendentes**. Nenhuma alteração em código, sistema, memória ou modelos foi realizada pelo assistente.
+
+
+## Terceira coleta — memória liberada (04/11/2026)
+
+**Saída fornecida pelo operador:**
+
+```text
+free -h
+Mem.: 14Gi total, 5,4Gi usada, 7,5Gi livre, 9,1Gi disponível
+Swap: 4,0Gi total, 1,9Gi usada, 2,1Gi livre
+
+ps -eo pid,comm,%mem,rss --sort=-rss | head -n 10
+1191399 Isolated Web Co 5.4 829680
+70242 firefox 5.2 796544
+70819 WebExtensions 3.0 458220
+1678954 code 2.3 354004
+1678643 code 2.0 319720
+60124 gnome-shell 1.5 239400
+1678345 code 1.1 182556
+71217 Privileged Cont 1.0 164664
+1678891 code 1.0 162120
+```
+
+**Comparação:** RAM disponível aumentou de 3,2 para **9,1 GiB** (+5,9 GiB); swap utilizada caiu de 2,6 para **1,9 GiB** (−0,7 GiB). O processo de ~4,5 GiB não aparece mais no top 10; o maior processo apresentado agora possui ~810 MiB RSS. Isso é compatível com redução de uso do navegador, mas não prova quais abas foram fechadas nem que swap será estável sob carga. Não houve coleta adicional de `vmstat` nesta rodada; o armazenamento disponível observado anteriormente foi 31 GiB, não medido novamente.
+
+**Decisão de continuidade:** recursos atuais são mais favoráveis para **instalar e testar a importação de bibliotecas CPU-only no `sam2-lab/.venv`**, mas não garantem execução de inferência SAM 2. Instalar primeiro apenas `torch` + `torchvision` da distribuição CPU oficial, conferir versões e um tensor simples; instalar SAM 2 e checkpoint apenas depois dos resultados, de forma incremental. Antes de iniciar inferência real, obter nova medida de memória. Nenhuma instalação de IA foi observada ou executada nesta rodada.
+
+A instrução controlada de instalação está em `docs/SAM2_PREPARACAO_E2.md`. **E2.2 continua aberta.**
