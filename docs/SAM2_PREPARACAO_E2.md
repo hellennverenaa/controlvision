@@ -323,3 +323,25 @@ df -h "$HOME"
 `rss` é memória residente em KiB, e `%mem` é porcentagem aproximada da RAM física; somas de RSS podem contar páginas compartilhadas mais de uma vez. Revisar processos de maior consumo **sem encerrá-los automaticamente**. Não executar `swapoff`, não instalar bibliotecas pesadas nem baixar checkpoints antes de revisar esse diagnóstico. Não é necessário compartilhar linha de comando completa, variáveis, nomes de arquivos privados ou segredos.
 
 **Estado:** preparação de Python isolado **concluída**; instalação PyTorch/torchvision, SAM 2.1 tiny, pesos e inferência **não realizadas**. E2.2 continua aberta.
+
+
+## E2.2 — Instalação incremental de PyTorch CPU-only (instrução, ainda não executada)
+
+Após terceira coleta de memória em 04/11/2026 (`9,1 GiB` RAM disponível, `1,9 GiB` swap em uso), a primeira ação experimental autorizada a propor é instalar **somente PyTorch e TorchVision CPU-only**, no laboratório privado já criado, usando o índice oficial da PyTorch. A instalação por `uv pip` não exige `sudo` e depende do ambiente virtual `sam2-lab` corretamente ativado.
+
+```bash
+cd ~/Documentos/ambiente_dass
+source sam2-lab/.venv/bin/activate
+which python
+python --version
+uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+python -c 'import torch, torchvision; print("torch:",torch.__version__); print("torchvision:",torchvision.__version__); print("cuda:",torch.cuda.is_available()); print("tensor:",torch.rand(2, 2))'
+free -h
+df -h "$HOME"
+```
+
+A versão de `torch` precisa ser >=2.5.1, com `torchvision` compatível, conforme a Meta. O sufixo `+cpu` na versão de PyTorch pode aparecer. `cuda: False` é o esperado para **este ambiente CPU-only** e não diagnostica a existência física de placa de vídeo. Caso o instalador apresente conflito, falta de disco ou memória, **interromper e registrar a mensagem completa**, sem `sudo`, CUDA, substituição de pacotes do sistema ou ajustes de swap.
+
+**Fontes oficiais de instalação:** https://pytorch.org/get-started/locally/ e https://github.com/facebookresearch/sam2/blob/main/INSTALL.md .
+
+**Ainda não fazer nesta subetapa:** instalar ou executar SAM 2, baixar checkpoint, habilitar `CONTROLVISION_SAM2_ENABLED`, carregar imagens proprietárias. A preparação de bibliotecas só estará validada após o retorno dos comandos e testes acima; **E2.2 permanece aberta**.
