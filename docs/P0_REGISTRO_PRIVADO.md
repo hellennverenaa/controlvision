@@ -57,3 +57,18 @@ cd ~/Documentos/ambiente_dass/controlvision/backend
 ```
 
 Se o comando de instalação informar `No module named pip`, interromper e diagnosticar o ambiente antes de instalar pacotes de outra forma. **Aguardando saída da instalação e dos testes para registrar aprovação ou falha real.** Nenhuma foto, CAD ou máscara privada precisa ser fornecida para esses testes sintéticos.
+
+
+## Execução local confirmada — 04/11/2026
+
+O operador instalou `pytest==9.2.0` no ambiente `controlvision/backend/.venv` e forneceu a saída da execução:
+
+```text
+.venv/bin/python -m pytest --version
+pytest 9.2.0
+.venv/bin/python -m pytest -q tests/test_p0_manifest.py
+....... [100%]
+7 passed in 0.01s
+```
+
+**Conclusão:** os sete testes sintéticos do validador de manifesto P0 foram aprovados no computador do operador. Esta evidência não inclui suíte completa, análise de fotografia real, verificação física de furos, integração com IA ou homologação industrial. Os arquivos privados do ensaio-001 ainda precisam ser preparados e revisados.
