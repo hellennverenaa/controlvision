@@ -43,3 +43,18 @@ O erro mais relevante é a confusão entre **trama normal** e **furos passantes 
 - [Plano mestre](../PLANO_DESENVOLVIMENTO.md)
 
 **Registro documental apenas; não foram executados testes, treinamentos ou inferência adicionais.**
+
+
+## Nova rodada visual com duas orientações — 04/11/2026
+
+**Origem:** quatro capturas de tela fornecidas pelo operador e relatório textual do laboratório de imagem; fotografias e overlays **não adicionados ao GitHub**. Não foi fornecida uma anotação física individual dos três furos nem referência de máscara humana.
+
+**Captura A, lingueta rotacionada:** visualização da foto e máscara OpenCV externa preenchida, com `status=ok`, **23,7 ms**, **960 × 1280 px**. SAM 2 `indisponivel` (**0,01 ms**, sem inferência). Uma captura de overlay mostra **100 candidatos circulares amarelos** concentrados numa região da malha, comparados às **três entidades circulares previstas** por referência CAD. Relatório da mesma rodada apresenta **0 de 3 candidatos próximos** dos centros na referência ilustrativa; **9 referências** continuam sem numeração identificada. Ajuste adicional: **22,7 px de translação e −0,47° de rotação** usando somente contorno externo; diferença visual normalizada **1,7%**, sem significado metrológico.
+
+**Contraste localizado CAD, captura A:** V01/V02/V03 recebem etiqueta de **sinal suspeito**, mas picos estão apenas marginalmente acima dos limiares (**+0,9 / +0,3 / 0 níveis**, respectivamente). O relatório compara os sinais à trama: V01 ficou **+5 níveis** vs p90 local, V02 **−8**, V03 **+25**. Em análise multiescala, V01 e V03 apresentam alteração incomum em 15 px; V02 não se destaca da trama. **Nenhum desses resultados demonstra furo detectado ou ausente**. O relatório registra **0/0 marcações humanas confirmadas**.
+
+**Captura B, outra orientação:** OpenCV `status=ok`, **21,08 ms**, **960 × 1280 px**; SAM 2 `indisponivel` (**0,01 ms**). Máscara externa visualmente acompanha a silhueta. Captura de overlay de outro teste mostra **15 candidatos amarelos**, também mais que as três entidades circulares por CAD. **Não houve máscara de referência humana e não há IoU/Dice**.
+
+**Conclusão técnica da rodada:** o baseline mantém aparência visual coerente de segmentação externa em orientações distintas, mas a etapa de sinais internos **não é robusta**: grande variação de candidatos (15 vs 100) para fotos/malhas e `0/3` nas proximidades ilustrativas é incompatível com qualquer alegação de identificação confiável. A mudança de contagens não pode ser atribuída somente à orientação: as capturas podem ser fotografias, regiões e parâmetros diferentes. O indicador `0/3` **não é taxa de recuperação física**, e a numeração continua desconhecida.
+
+**Próximo experimento controlado:** usar a **mesma fotografia original F01**, mesma configuração/modo e uma referência CAD escolhida explicitamente **somente para registro visual**; marcar manualmente os três vazadores efetivamente identificados por inspeção física (em correspondência com suas posições no CAD, sem presumir numeração), confirmar cada um e comparar distâncias em **pixels** entre pontos roxos e centros azuis. Repetir com uma segunda orientação somente após estabelecer referência e registrar configuração; manter avaliação óptica e contagem global separadas. Não ajustar limiar para forçar `3` candidatos, nem comparar tempos como benchmark industrial.

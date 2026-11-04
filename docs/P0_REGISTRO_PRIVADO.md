@@ -153,3 +153,10 @@ Blocos inseridos: 9
 O arquivo DXF local foi aberto com `ezdxf`; a consulta comprovou a versão, a ausência de unidade declarada e **nove INSERTs no modelspace**. Essa consulta **não contou as entidades circulares dos blocos locais, não estabeleceu numeração e não comprovou equivalência binária** com o DXF anexado anteriormente. `$INSUNITS=0` impede presumir milímetros sem confirmar a unidade de origem.
 
 **Próxima ação:** conferir visualmente F01 sem sobreposições, identificar a revisão e a referência entre os nove blocos, e fazer anotação física dos três vazadores correspondentes. Ainda não existem confirmação individual de furo, teste óptico real calibrado, dataset rotulado, treino de IA ou homologação.
+
+
+## Capturas da interface e resultado exploratório — 04/11/2026
+
+Operador compartilhou novas capturas OpenCV de duas orientações da lingueta e relatório: máscaras externas `ok` (**23,7 ms** e **21,08 ms**, ambas `960 × 1280`), SAM 2 `indisponivel`, e busca circular com **100 candidatos** numa rodada e **15** noutra; **três geometrias CAD**, mas em uma referência selecionada, **0/3** candidatos coincidiram próximos segundo a regra ilustrativa da UI. A numeração permanece desconhecida. Evidência completa, ressalvas e comparações em [EVIDENCIAS_TESTES_LINGUETA_ANTERIORES.md](EVIDENCIAS_TESTES_LINGUETA_ANTERIORES.md).
+
+**P0 permanece sem verdade de referência:** o relatório indicou `0 de 0` pontos humanos confirmados e a avaliação E1.6 não recebeu máscara revisada. O relato de que três furinhos existem na peça **não identifica suas coordenadas pixel a pixel**, e ausência de destaque óptico não é ausência de furo. **Próxima ação prática:** marcar fisicamente/revisar os três furos na foto original, sem enviar manifesto privado ao GitHub. Se o usuário registrar somente coordenadas sem identificação física individual, manter `verificado_fisicamente=false` no manifesto. Sem validação dimensional.

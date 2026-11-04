@@ -26,6 +26,8 @@ O produto será **web, acessado em vários computadores da produção**, com cab
 
 **P0 — manifesto privado validado (04/11/2026):** operador copiou DXF e fotografias para `ensaio-001`, editou `manifesto.json` com F01 e V01/V02/V03 provisórios (`incerto`/`false`) e recebeu **`Estrutura P0 válida`** com `--require-files`. DXF local abriu com ezdxf: **AC1015**, `$INSUNITS=0`, **9 blocos INSERT**. Avisos `cp -n` são apenas portabilidade. A verificação comprova **estrutura/caminhos**, não máscara humana, geometria circular de cada bloco, revisão, escala real ou furos abertos. **Próximo: verificar visualmente F01 e associar os vazadores ao CAD correto, com revisão física individual.** [Evidência](docs/P0_REGISTRO_PRIVADO.md).
 
+**P0 — novas evidências de orientação e microtrama (04/11/2026):** capturas da interface mostraram duas máscaras externas OpenCV `ok` (23,7 ms e 21,08 ms, 960×1280); SAM 2 indisponível. Busca global exibiu **100 candidatos circulares** em uma rodada e **15** em outra diante de **3 geometrias circulares por CAD**; no relatório da primeira rodada **0/3** proximidades ilustrativas, **9 referências** sem numeração identificada, **0/0 marcações humanas**. Esses números **não comprovam detecção nem ausência de furos** e não medem desempenho industrial. Próxima prioridade: **marcar os três vazadores reais na foto original com verificação física individual e avaliar distâncias a centros CAD em pixels**, preservando estados incertos quando não confirmados. Ver [evidências da lingueta](docs/EVIDENCIAS_TESTES_LINGUETA_ANTERIORES.md). **Nenhum teste automatizado foi executado nesta atualização exclusivamente documental.**
+
 ## Roadmap e critérios
 
 | Fase | Escopo | Estado em 04/11/2026 | Critério de conclusão |
