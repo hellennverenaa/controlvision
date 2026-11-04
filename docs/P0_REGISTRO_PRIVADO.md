@@ -93,3 +93,15 @@ Resultado fornecido:
 ```
 
 **Conclusão:** regressão automatizada completa do backend passou nesta execução local. Os **7 testes de estrutura do manifesto P0** integram essa suíte. Isso **não** demonstra reconhecimento de vazadores em fotos reais, revisão física, treinamento de IA, calibração ou homologação. Também não substitui testes de frontend e E2E. Próximo passo permanece a preparação de um ensaio privado com uma lingueta física, seu DXF correto e fotos originais.
+
+
+## Verificação inicial do manifesto copiado — 04/11/2026
+
+Operador confirmou criação de `controlvision-dados-privados/ensaio-001/{cad,fotos}` e cópia do exemplo `p0_manifesto_sintetico.json` para `manifesto.json`. A execução com `--require-files` retornou:
+
+```text
+ERRO: cad_arquivo: arquivo não encontrado
+ERRO: fotografias[0].arquivo: arquivo não encontrado
+```
+
+**Diagnóstico:** resultado esperado para manifesto sintético que aponta para `cad/arquivo_exemplo.dxf` e `fotos/frontal_exemplo.jpg`, ainda não existentes. **Não representa falha do validador nem confirmação de ensaio real.** Próxima ação: localizar o DXF correto e a foto original sem overlay em armazenamento autorizado, copiar para a pasta privada e ajustar os caminhos relativos no manifesto. Não criar arquivos fictícios para fazer o teste passar. Manter estados físicos `incerto`/`false` até revisão individual, e não publicar caminhos/dados sensíveis em repositório público.

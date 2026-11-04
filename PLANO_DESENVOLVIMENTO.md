@@ -18,6 +18,8 @@ O produto será **web, acessado em vários computadores da produção**, com cab
 
 **Testes backend confirmados (04/11/2026):** operador instalou `pytest==9.2.0` em `backend/.venv` e executou **a suíte completa:** `140 passed in 2.93s`. Os sete testes do manifesto P0 já haviam passado isoladamente (`7 passed in 0.01s`). Regressão automatizada do backend aprovada nesta execução local, **sem validar fotografias, vazadores reais, IA ou uso industrial**. Evidências em [docs/P0_REGISTRO_PRIVADO.md](docs/P0_REGISTRO_PRIVADO.md).
 
+**P0 — preparação de arquivos privados (04/11/2026):** operador criou a estrutura de diretórios `ensaio-001/{cad,fotos}` e copiou o manifesto sintético. Execução com `--require-files` retornou ausência do arquivo CAD e da fotografia mencionados no exemplo — comportamento esperado, pois arquivos reais ainda não foram vinculados. **P0 não concluído.** Próximo passo: selecionar DXF de referência da lingueta e foto original, preencher seus caminhos relativos no manifesto privado e repetir verificação. [Registro P0](docs/P0_REGISTRO_PRIVADO.md).
+
 ## Roadmap e critérios
 
 | Fase | Escopo | Estado em 04/11/2026 | Critério de conclusão |
