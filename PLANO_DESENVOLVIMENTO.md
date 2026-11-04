@@ -16,6 +16,8 @@ O produto será **web, acessado em vários computadores da produção**, com cab
 
 **Próximo marco prioritário:** **P0 — estudo óptico + referência humana privada**, usando peça física e CAD correspondente para verificar se os menores vazadores podem ser vistos e separados da trama. Seleção da câmera comercial permanece **posterior**; não bloquear P0 por compra de equipamento.
 
+**Bloqueio local dos testes P0 (04/11/2026):** tentativa de rodar `backend/.venv/bin/python -m pytest` retornou `No module named pytest`. O pacote de testes ainda não está presente no ambiente virtual do backend; instalar ali e repetir os sete testes sintéticos, sem mexer no ambiente isolado de IA. **Nenhum teste P0 foi executado com sucesso até essa evidência.** Procedimento em [docs/P0_REGISTRO_PRIVADO.md](docs/P0_REGISTRO_PRIVADO.md).
+
 ## Roadmap e critérios
 
 | Fase | Escopo | Estado em 04/11/2026 | Critério de conclusão |

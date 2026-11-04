@@ -44,3 +44,16 @@ O argumento `--require-files` verifica existência dos arquivos relativos (a par
 - [ ] Resultados reais armazenados e avaliados **privadamente**.
 
 **Privacidade:** o validador roda offline. O manifesto pode conter identificadores proprietários; não anexá-lo a issues, logs públicos ou repositórios.
+
+## Diagnóstico de ambiente de testes — 04/11/2026
+
+O operador executou `backend/.venv/bin/python -m pytest -q tests/test_p0_manifest.py` e recebeu `No module named pytest`. **Isso só confirma que o pytest não está instalado nesse interpretador; não é resultado dos sete testes do P0.** O `pytest` é ferramenta de desenvolvimento, não dependência necessária para a API em produção. Instalar explicitamente no ambiente virtual do **backend**, não no laboratório `sam2-lab/.venv`:
+
+```bash
+cd ~/Documentos/ambiente_dass/controlvision/backend
+.venv/bin/python -m pip install pytest
+.venv/bin/python -m pytest --version
+.venv/bin/python -m pytest -q tests/test_p0_manifest.py
+```
+
+Se o comando de instalação informar `No module named pip`, interromper e diagnosticar o ambiente antes de instalar pacotes de outra forma. **Aguardando saída da instalação e dos testes para registrar aprovação ou falha real.** Nenhuma foto, CAD ou máscara privada precisa ser fornecida para esses testes sintéticos.
