@@ -24,6 +24,8 @@ O produto será **web, acessado em vários computadores da produção**, com cab
 
 **P0 — arquivos de origem identificados (04/11/2026):** listagem local confirmou **8 JPEGs** em `~/Downloads/WhatsApp Unknown 2026-10-20 at 16.21.03/` e **`QUEST 7 - LINGUETA.dxf`** em `~/Downloads/`. **Ainda não foram copiados nem vinculados ao manifesto em evidência recebida.** Próximo passo: copiar arquivos para a pasta privada do ensaio, escolher original sem overlay, atualizar registro mantendo estados físicos incertos, rodar `--require-files`; validar a versão local do DXF separadamente, pois o anexo tinha sufixo (1). Ver [guia P0](docs/P0_REGISTRO_PRIVADO.md).
 
+**P0 — manifesto privado validado (04/11/2026):** operador copiou DXF e fotografias para `ensaio-001`, editou `manifesto.json` com F01 e V01/V02/V03 provisórios (`incerto`/`false`) e recebeu **`Estrutura P0 válida`** com `--require-files`. DXF local abriu com ezdxf: **AC1015**, `$INSUNITS=0`, **9 blocos INSERT**. Avisos `cp -n` são apenas portabilidade. A verificação comprova **estrutura/caminhos**, não máscara humana, geometria circular de cada bloco, revisão, escala real ou furos abertos. **Próximo: verificar visualmente F01 e associar os vazadores ao CAD correto, com revisão física individual.** [Evidência](docs/P0_REGISTRO_PRIVADO.md).
+
 ## Roadmap e critérios
 
 | Fase | Escopo | Estado em 04/11/2026 | Critério de conclusão |
@@ -46,7 +48,7 @@ As etapas podem ter **experimentos paralelos**; P0 foi priorizado antes de inves
 **Infraestrutura P0.1 implementada (04/11/2026):** `backend/app/p0_manifest.py` valida metadados privados, identificadores, estados de revisão física e caminhos relativos; exemplo exclusivamente sintético em `docs/exemplos/`, testes unitários em `backend/tests/test_p0_manifest.py`. **Isso não significa ensaio real executado.** Guia: [Registro P0](docs/P0_REGISTRO_PRIVADO.md).
 
 
-- [ ] Selecionar **uma lingueta física** e sua referência CAD/revisão em armazenamento privado.
+- [ ] Confirmar **uma lingueta física** e a referência/revisão correta dentre nove blocos CAD; arquivo DXF e fotografias já organizados privadamente, mas referência ainda não confirmada.
 - [ ] Identificar no CAD os vazadores passantes e recortes; confirmar **fisicamente** cada região, separando `aberto`, `incompleto/ausente` e `incerto`.
 - [ ] Registrar fotos originais sem overlays, iluminação atual e, se viável, teste controlado com contraluz; **não publicar arquivos da fábrica**.
 - [ ] Determinar se o **menor furo** aparece com contraste e pixels suficientes, evitando confusão com a trama; não inventar diâmetro em mm.

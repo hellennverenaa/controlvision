@@ -133,3 +133,23 @@ O operador confirmou **oito fotografias JPEG** na pasta `~/Downloads/WhatsApp Un
 **Próxima execução local sugerida:** copiar (não mover) o DXF e os oito JPEGs para `controlvision-dados-privados/ensaio-001`; escolher a fotografia `WhatsApp Image 2026-10-20 at 16.20.56 (1).jpeg` como candidata inicial **apenas após conferir que está sem overlay e corresponde à peça**, ou selecionar outra foto original; preencher `cad_arquivo`, `fotografias` e três registros provisórios `V01`/`V02`/`V03` com `estado_fisico=incerto`, `verificado_fisicamente=false`. Não marcar número/tamanho/revisão do CAD como conhecido até confirmação. Quando o manifesto for atualizado, rodar `python -m app.p0_manifest ... --require-files`, com Python do backend. Esta validação só checa arquivo/estrutura, não verifica dados ópticos ou verdade física.
 
 **Importante:** a cópia do DXF anexada à conversa tinha nome diferente (`QUEST 7 - LINGUETA(1).dxf`); **não foi comprovada igualdade binária entre o anexo e a versão local**. Verificar a estrutura da versão copiada separadamente antes de aproveitar conclusões do anexo. Nenhum dado privado foi versionado.
+
+
+## Ensaio privado — arquivos vinculados e manifesto aprovado (04/11/2026)
+
+O operador executou `cp -n` do DXF `QUEST 7 - LINGUETA.dxf` e dos JPEGs de Downloads para a pasta privada `controlvision-dados-privados/ensaio-001/{cad,fotos}`. O comando `cp` exibiu **avisos de portabilidade** sobre `-n` (sugere `--update=none`), mas **nenhum erro de cópia**. Em operações posteriores, preferir `cp --update=none` no GNU coreutils para não sobrescrever os originais.
+
+O operador editou o manifesto privado: `peca_fisica_id=LINGUETA_ENSAIO_001`; material, revisão e revisor assinalados como ainda não confirmados; DXF relativo `cad/QUEST 7 - LINGUETA.dxf`; fotografia F01 `fotos/WhatsApp Image 2026-10-20 at 16.20.56 (1).jpeg`, iluminação `outra`, declaração `original_sem_overlay=true` (a inspeção visual desse atributo está **pendente**); geometrias provisórias V01, V02, V03 todas com `estado_fisico=incerto` e `verificado_fisicamente=false`.
+
+**Resultado efetivamente recebido:**
+
+```text
+Estrutura P0 válida. NÃO significa vazadores validados nem captura adequada.
+Versão DXF: AC1015
+Unidades declaradas: 0
+Blocos inseridos: 9
+```
+
+O arquivo DXF local foi aberto com `ezdxf`; a consulta comprovou a versão, a ausência de unidade declarada e **nove INSERTs no modelspace**. Essa consulta **não contou as entidades circulares dos blocos locais, não estabeleceu numeração e não comprovou equivalência binária** com o DXF anexado anteriormente. `$INSUNITS=0` impede presumir milímetros sem confirmar a unidade de origem.
+
+**Próxima ação:** conferir visualmente F01 sem sobreposições, identificar a revisão e a referência entre os nove blocos, e fazer anotação física dos três vazadores correspondentes. Ainda não existem confirmação individual de furo, teste óptico real calibrado, dataset rotulado, treino de IA ou homologação.
