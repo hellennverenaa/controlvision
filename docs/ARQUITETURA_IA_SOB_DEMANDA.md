@@ -1,67 +1,36 @@
-# ControlVision — arquitetura de IA sob demanda (proposta)
+# IA sob demanda — decisão arquitetural proposta
 
-**Data:** 04/11/2026  
-**Situação:** proposta técnica para decisão, **não implementada nem aprovada como arquitetura definitiva**.  
-**Etapa:** E2.2, experimentação SAM 2.
+**Revisão:** 04/11/2026. **Estado:** direção confirmada de acesso via web multi-posto; detalhes de servidor, fila e modelos **pendentes de implementação**.
 
-## Pergunta de produto
+## Por que IA centralizada?
 
-O operador precisa instalar uma IA no próprio computador? **Não.** O modelo pode ser executado por um serviço dedicado controlado pela organização ou por um provedor externo, enquanto a interface Vue e a API FastAPI continuam acessíveis pelo navegador.
+O ControlVision será acessado por vários computadores da produção. O objetivo é que **nenhum operador precise instalar modelos ou PyTorch**: o navegador envia capturas à API e um serviço central processa tarefas pesadas, com proteção dos dados proprietários.
 
-O laboratório local `~/Documentos/ambiente_dass/sam2-lab/.venv` serve **apenas para investigação**, não representa requisito de instalação nas máquinas dos operadores. A execução de inferência local não foi validada.
+A cabine existe, mas a câmera fixa ainda não foi escolhida nem instalada. O laboratório Python 3.12 com PyTorch CPU no computador de desenvolvimento é **somente experimental**.
 
-## Alternativas
-
-| Alternativa | Pontos positivos | Restrições / riscos |
-|---|---|---|
-| Local na máquina do operador | Testes offline, nenhum envio de imagem para outra máquina | Replicação de dependências, consumo de RAM/CPU, manutenção |
-| Serviço de IA em servidor interno | Centraliza modelos, controle de dados, atualizações independentes | Exige provisionamento, autenticação, recursos computacionais, observabilidade |
-| API externa | Sem operar modelo próprio, escalonamento gerenciado | Privacidade de moldes/fotos, contratos, custos, disponibilidade e conformidade |
-
-**Direção recomendada para projeto:** contrato de provedores e **IA opcional**, sem substituir OpenCV; avaliar serviço corporativo interno como opção preferencial para imagens proprietárias. API externa só após aprovação explícita sobre segurança/privacidade, fornecedores, custo e retenção de dados.
-
-## Fluxo sugerido
-
-1. Operador importa CAD e foto pela interface; FastAPI faz validação, proteção dos dados e análise convencional.
-2. Orquestrador decide se vale consultar IA (solicitação explícita, falha/inconclusão do baseline, ou experimento habilitado).
-3. Adaptador de segmentação chama o provedor configurado (`local_experimental`, `servidor_interno`, ou `api_externa`), com timeout, limites e identificação do modelo.
-4. Resposta padronizada preserva `method`, `status`, máscara, avisos, versão e necessidade de revisão humana. Falha ou indisponibilidade da IA **não é sucesso inventado**.
-5. OpenCV + geometria CAD seguem independentes para validações geométricas; nenhum resultado de IA autoriza medição em mm, aceitação/rejeição ou liberação de produção.
-
-`backend/app/segmentation_contract.py` e `frontend/src/segmentationComparison.ts` já estabelecem conceitos úteis para preservar um contrato consistente; **um sistema de provedores ainda não foi implementado**.
-
-## Segurança e operação antes de produção
-
-- Não enviar CAD, fotos ou anotações proprietárias a serviços externos sem aprovação.
-- Definir autenticação/autorização, processamento assíncrono, limites de tamanho, rate limiting e rastreabilidade.
-- Estabelecer política de retenção, criptografia em trânsito/repouso, remoção de artefatos e segregação por cliente/unidade.
-- Avaliar custos, latência, filas, disponibilidade, manutenção dos modelos e testes com referência humana.
-- Validar qualidade de segmentação com métricas reproduzíveis; SAM 2 não é detector industrial de vazadores nem sistema metrológico.
-
-## E2.2 — evidência adicional da instalação CPU-only
-
-Saída fornecida pelo operador:
+## Estratégia proposta
 
 ```text
-Using Python 3.12.16 environment at: sam2-lab/.venv
-Installed 13 packages
-torch==2.15.0+cpu
-torchvision==0.29.2+cpu
+Postos web -> API FastAPI / autenticação futura
+          -> fila / armazenamento privado
+          -> serviço IA isolado
+               máscara da peça
+               ranking CAD (modelo/numeração/desconhecido)
+               inspeção por patches dos vazadores/recortes + busca global
+          -> resultados explicáveis + revisão humana
 ```
 
-O teste de importação (`import torch, torchvision`, versões, CUDA e tensor) foi **interrompido pelo operador com Ctrl+C** durante `import torch` e terminou em `KeyboardInterrupt`. Portanto **a instalação dos pacotes foi confirmada, mas a importação/funcionamento não foi verificada**. Isso não demonstra incompatibilidade ou defeito.
+OpenCV e operações geométricas são mantidos como referência. IA é usada quando agrega evidência mensurável. **SAM 2 é candidato para máscara externa/anotação, não detector de microvazadores validado.** Modelos para trama/vazadores ainda precisam de rótulos físicos. Falha de IA retorna `indisponivel` / `inconclusivo`, não aprovação.
 
-Últimos recursos informados: `8,2 GiB` RAM disponível, `1,9 GiB` swap utilizada, `31 GiB` de disco disponíveis. Sem pesos SAM 2 e sem inferência real registrada.
+## Implantação a decidir
 
-## Decisão pendente e próximo passo
+- Serviço em servidor controlado pela empresa ou infraestrutura contratada com exigências de privacidade.
+- CPU/GPU, filas, autenticação, PostgreSQL, controle de versões, retenção, observabilidade, limites e capacidade simultânea **pendentes**.
+- API externa somente com aprovação explícita de segurança, políticas e contratos para fotos/CAD privados.
+- Separar tarefas e métricas: segmentação da peça, reconhecimento CAD e inspeção física de microfuros.
 
-**Suspender novos downloads** até escolher onde a IA será executada e confirmar a política para dados industriais. Não apagar o laboratório criado nem marcar E2.2 concluída. Se houver necessidade de continuar a prova de conceito local, repetir primeiro teste mínimo de importação sem interrupção, com limite operacional de tempo e monitoramento; a alternativa é ensaio em ambiente de servidor próprio. Registrar decisão e resultados no plano mestre.
+## Situação comprovada
 
+Código atual: módulo SAM 2 opcional, contrato de máscara v1, sem execução do modelo real. Laboratório isolado: torch 2.15.0+cpu e torchvision 0.29.2+cpu instalados, mas o teste de importação foi interrompido (`KeyboardInterrupt`). Não há treino, inferência real nem serviço central implementado.
 
-## Complemento — aplicação web na produção e diferenciação por tarefa (04/11/2026)
-
-O operador confirmou que o ControlVision será **web, online e acessado por vários computadores da produção**. Também forneceu três fotografias de malha branca sobre fundo azul, em diferentes orientações, para ilustrar que textura normal pode parecer pequenos vazadores. **Não versionar essas fotografias no GitHub público.**
-
-A direção técnica evolui de um único serviço de segmentação para um **pipeline de três tarefas separadas**: (1) máscara da peça, (2) ranking de família/referência CAD com possibilidade de `não identificado`, (3) inspeção de microvazadores e recortes com crops de alta resolução e análise global independente. As tarefas podem compartilhar um serviço de inferência, mas têm métricas, rótulos e critérios de indisponibilidade diferentes.
-
-**Preferência de implantação proposta:** frontend web + FastAPI e workers IA com fila em servidor controlado, sem instalar IA nos computadores operadores. A implantação e o treinamento **não foram implementados**, e nenhuma GPU/serviço final foi escolhida. Para detalhes, fontes GitHub e plano de experimentos, ver [pesquisa aplicada de 04/11/2026](PESQUISA_IA_INSPECAO_TRAMAS_CAD_2026-11-04.md). E2.2 segue aberta; priorizar definição de protocolo ótico e dados privados antes de investir em treinamento.
+Detalhamento: [Arquitetura geral](ARQUITETURA_SISTEMA.md), [Pesquisa aplicada](PESQUISA_IA_INSPECAO_TRAMAS_CAD_2026-11-04.md) e [Plano](../PLANO_DESENVOLVIMENTO.md).
