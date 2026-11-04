@@ -105,3 +105,22 @@ ERRO: fotografias[0].arquivo: arquivo não encontrado
 ```
 
 **Diagnóstico:** resultado esperado para manifesto sintético que aponta para `cad/arquivo_exemplo.dxf` e `fotos/frontal_exemplo.jpg`, ainda não existentes. **Não representa falha do validador nem confirmação de ensaio real.** Próxima ação: localizar o DXF correto e a foto original sem overlay em armazenamento autorizado, copiar para a pasta privada e ajustar os caminhos relativos no manifesto. Não criar arquivos fictícios para fazer o teste passar. Manter estados físicos `incerto`/`false` até revisão individual, e não publicar caminhos/dados sensíveis em repositório público.
+
+
+## Arquivos identificados para o primeiro ensaio (04/11/2026)
+
+O operador informou que as fotografias estão **no computador local**, no diretório `~/Downloads/WhatsApp Unknown 2026-10-20 at 16.21.03/`, e que o arquivo DXF correspondente se encontra em `~/Downloads/`. Uma cópia do DXF intitulada `QUEST 7 - LINGUETA(1).dxf` foi disponibilizada separadamente para inspeção nesta conversa, **não no GitHub**.
+
+**Inspeção estrutural realizada somente na cópia anexada, com ezdxf:** arquivo DXF compatível com AutoCAD 2000 (`AC1015`); modelspace com **nove inserções `INSERT`**, referenciando nove blocos com **três entidades `CIRCLE` dentro de cada bloco**; `$INSUNITS=0` (unidades de desenho não especificadas). Isso é consistente com as nove referências e três elementos circulares por referência no relatório antigo, mas **não identifica a numeração correta, não comprova que cada círculo seja um furo passante, não define milímetros nem detecta aberturas físicas na foto**.
+
+**Pendente:** descobrir os nomes exatos dos JPEG/PNG na pasta de fotografias e confirmar a existência/nome do DXF na pasta local do operador; selecionar o **original sem overlays** correspondente e copiar arquivos, sem movê-los, para o ensaio privado. Não criar placeholders para satisfazer `--require-files`.
+
+Comandos seguros, sem cópia nem alteração de dados:
+
+```bash
+find "/home/hellen/Downloads/WhatsApp Unknown 2026-10-20 at 16.21.03" -maxdepth 1 -type f \
+  \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) -printf '%f\n'
+find /home/hellen/Downloads -maxdepth 1 -type f -iname "*QUEST*LINGUETA*.dxf" -printf '%f\n'
+```
+
+**Situação:** arquivo DXF anexo inspecionado estruturalmente; arquivos reais ainda **não vinculados ao manifesto no computador** e ensaio P0 **não executado**. Evitar publicar DXF/fotos/crops no GitHub.

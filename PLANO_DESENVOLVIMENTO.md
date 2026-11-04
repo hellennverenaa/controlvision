@@ -20,6 +20,8 @@ O produto será **web, acessado em vários computadores da produção**, com cab
 
 **P0 — preparação de arquivos privados (04/11/2026):** operador criou a estrutura de diretórios `ensaio-001/{cad,fotos}` e copiou o manifesto sintético. Execução com `--require-files` retornou ausência do arquivo CAD e da fotografia mencionados no exemplo — comportamento esperado, pois arquivos reais ainda não foram vinculados. **P0 não concluído.** Próximo passo: selecionar DXF de referência da lingueta e foto original, preencher seus caminhos relativos no manifesto privado e repetir verificação. [Registro P0](docs/P0_REGISTRO_PRIVADO.md).
 
+**P0 — localização de fontes reais (04/11/2026):** operador informou diretório das fotografias em `~/Downloads/WhatsApp Unknown 2026-10-20 at 16.21.03/` e DXF em `~/Downloads/`. DXF `QUEST 7 - LINGUETA(1).dxf` anexado à conversa foi inspecionado estruturalmente: **9 inserções de blocos e 3 círculos internos por bloco**, `$INSUNITS=0` (unidade não especificada). **Nenhum dado proprietário foi commitado**, numeração/vazadores reais não validados. Próximo: listar os nomes exatos de imagens e DXF locais, escolher original sem overlays e copiar arquivos para manifesto privado. [Evidência e procedimento](docs/P0_REGISTRO_PRIVADO.md).
+
 ## Roadmap e critérios
 
 | Fase | Escopo | Estado em 04/11/2026 | Critério de conclusão |
