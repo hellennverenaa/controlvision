@@ -22,6 +22,8 @@ O produto será **web, acessado em vários computadores da produção**, com cab
 
 **P0 — localização de fontes reais (04/11/2026):** operador informou diretório das fotografias em `~/Downloads/WhatsApp Unknown 2026-10-20 at 16.21.03/` e DXF em `~/Downloads/`. DXF `QUEST 7 - LINGUETA(1).dxf` anexado à conversa foi inspecionado estruturalmente: **9 inserções de blocos e 3 círculos internos por bloco**, `$INSUNITS=0` (unidade não especificada). **Nenhum dado proprietário foi commitado**, numeração/vazadores reais não validados. Próximo: listar os nomes exatos de imagens e DXF locais, escolher original sem overlays e copiar arquivos para manifesto privado. [Evidência e procedimento](docs/P0_REGISTRO_PRIVADO.md).
 
+**P0 — arquivos de origem identificados (04/11/2026):** listagem local confirmou **8 JPEGs** em `~/Downloads/WhatsApp Unknown 2026-10-20 at 16.21.03/` e **`QUEST 7 - LINGUETA.dxf`** em `~/Downloads/`. **Ainda não foram copiados nem vinculados ao manifesto em evidência recebida.** Próximo passo: copiar arquivos para a pasta privada do ensaio, escolher original sem overlay, atualizar registro mantendo estados físicos incertos, rodar `--require-files`; validar a versão local do DXF separadamente, pois o anexo tinha sufixo (1). Ver [guia P0](docs/P0_REGISTRO_PRIVADO.md).
+
 ## Roadmap e critérios
 
 | Fase | Escopo | Estado em 04/11/2026 | Critério de conclusão |

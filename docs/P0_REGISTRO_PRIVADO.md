@@ -124,3 +124,12 @@ find /home/hellen/Downloads -maxdepth 1 -type f -iname "*QUEST*LINGUETA*.dxf" -p
 ```
 
 **Situação:** arquivo DXF anexo inspecionado estruturalmente; arquivos reais ainda **não vinculados ao manifesto no computador** e ensaio P0 **não executado**. Evitar publicar DXF/fotos/crops no GitHub.
+
+
+## Identificação dos arquivos locais — 04/11/2026
+
+O operador confirmou **oito fotografias JPEG** na pasta `~/Downloads/WhatsApp Unknown 2026-10-20 at 16.21.03/` e **um DXF correspondente** com nome `QUEST 7 - LINGUETA.dxf` na pasta `~/Downloads/`. Os nomes originais das fotos incluem imagens de horários 16.20.55, 16.20.56 e 16.20.57, algumas com sufixos numéricos. **Ainda não há evidência de que os arquivos tenham sido copiados para `ensaio-001`**.
+
+**Próxima execução local sugerida:** copiar (não mover) o DXF e os oito JPEGs para `controlvision-dados-privados/ensaio-001`; escolher a fotografia `WhatsApp Image 2026-10-20 at 16.20.56 (1).jpeg` como candidata inicial **apenas após conferir que está sem overlay e corresponde à peça**, ou selecionar outra foto original; preencher `cad_arquivo`, `fotografias` e três registros provisórios `V01`/`V02`/`V03` com `estado_fisico=incerto`, `verificado_fisicamente=false`. Não marcar número/tamanho/revisão do CAD como conhecido até confirmação. Quando o manifesto for atualizado, rodar `python -m app.p0_manifest ... --require-files`, com Python do backend. Esta validação só checa arquivo/estrutura, não verifica dados ópticos ou verdade física.
+
+**Importante:** a cópia do DXF anexada à conversa tinha nome diferente (`QUEST 7 - LINGUETA(1).dxf`); **não foi comprovada igualdade binária entre o anexo e a versão local**. Verificar a estrutura da versão copiada separadamente antes de aproveitar conclusões do anexo. Nenhum dado privado foi versionado.
