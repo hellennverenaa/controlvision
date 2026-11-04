@@ -32,6 +32,8 @@ O produto será **web, acessado em vários computadores da produção**, com cab
 
 **P0/IA 2 — preparação de patches com rótulos humanos (04/11/2026):** criado `backend/app/p0_patch_dataset.py` e teste sintético para exportar **somente no armazenamento privado**, em resolução original, recortes de vazadores fisicamente confirmados e de trama normal revisada. Não há autoatribuição de rótulos, treinamento ou avaliação real. [Procedimento](docs/P0_IA2_RECORTE_REFERENCIAS.md). **Próximo passo:** verificar correspondência exata entre coordenadas M01–M03 e foto F01, criar `anotacoes.json` privado e executar testes/exportação na máquina do operador; sem forçar rótulos nem considerar P0 concluído. **Testes desta entrega ainda não executados pelo operador.**
 
+**P0/IA 2 — testes locais confirmados (04/11/2026):** operador executou `tests/test_p0_patch_dataset.py`: **8 passed in 0.14s**. Informou `cp --update=none` do modelo de anotações sintéticas para a pasta privada; a cópia não sobrescreve destino existente, devendo conferir o conteúdo antes de usar. Ainda **não foram confirmadas as coordenadas na foto F01 nem extraídos patches reais**. Próximo: conferir fotografia, resolução e anotações; não treinar nem marcar P0 concluído. [Procedimento](docs/P0_IA2_RECORTE_REFERENCIAS.md).
+
 ## Roadmap e critérios
 
 | Fase | Escopo | Estado em 04/11/2026 | Critério de conclusão |

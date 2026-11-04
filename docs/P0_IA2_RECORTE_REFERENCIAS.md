@@ -40,3 +40,17 @@ A saída deve conter PNGs `patch_001.png`, etc., e `indice.json` com rótulo dec
 - O próximo experimento poderá comparar medidas ópticas e depois modelos leves supervisionados, separados da IA 1; somente se dados suficientes justificarem.
 
 Referências: [Registro P0](P0_REGISTRO_PRIVADO.md), [Dados e validação](DADOS_TREINAMENTO_VALIDACAO.md), [Plano mestre](../PLANO_DESENVOLVIMENTO.md).
+
+
+## Execução local informada — 04/11/2026
+
+O operador executou `backend/.venv/bin/python -m pytest -q tests/test_p0_patch_dataset.py` e forneceu:
+
+```text
+........ [100%]
+8 passed in 0.14s
+```
+
+Confirmou também a cópia do exemplo `docs/exemplos/p0_anotacoes_sinteticas.json` para `controlvision-dados-privados/ensaio-001/anotacoes.json` por meio de `cp --update=none`. **A ausência de erro de `cp` não comprova que o arquivo de destino foi substituído, pois a opção não sobrescreve destinos já existentes.** Verificar conteúdo antes de editar.
+
+**Não extrair patches ainda:** as coordenadas do exemplo são sintéticas. É necessário verificar que a fotografia F01 corresponde exatamente à usada nas marcações M01 (825,6; 590,8), M02 (823,7; 719,5) e M03 (240,5; 634,2), além de confirmar as dimensões originais e a relação com o relato físico. Somente então preencher anotações privadas revisadas, sem publicá-las. **Sem exportação real de patches nem modelo treinado.**
