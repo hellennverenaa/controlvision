@@ -1,7 +1,7 @@
 # PLANO DE DESENVOLVIMENTO — ControlVision
 
 > **Documento vivo e fonte principal de acompanhamento do projeto.**  
-> Atualizado em: **03/11/2026** · Versão do plano: **1.8**  
+> Atualizado em: **04/11/2026** · Versão do plano: **1.8**  
 > Branch de trabalho: `feat/prototipo-validacao` · Estado: **PROTÓTIPO EXPERIMENTAL — NÃO LIBERA PRODUÇÃO**
 >
 > **Procedimento de entregas GitHub:** ver [`docs/FLUXO_TRABALHO_GITHUB.md`](docs/FLUXO_TRABALHO_GITHUB.md). Cada mudança deve incluir documentação `.md` específica para assuntos novos, atualização deste plano, testes cabíveis, commit e push na branch de validação. **E2.2 permanece pendente da execução local pelo operador.**
@@ -36,6 +36,7 @@ Construir um sistema de inspeção visual de componentes cortados para calçados
 **Novo resultado do operador (03/11/2026):** instalação standalone do `uv` confirmada no diretório do usuário (`~/.local/bin`), versão **0.13.7** (`x86_64-unknown-linux-gnu`). O erro ao digitar `uv 0.x.x` foi apenas tentativa de executar texto ilustrativo, sem impacto na instalação. **Ainda pendente:** instalar Python 3.12 com `uv`, criar/verificar `sam2-lab/.venv` e conferir RAM/disco. Ver `docs/SAM2_PREPARACAO_E2.md`.  
 **Evidência nova do operador (03/11/2026):** `uv python install 3.12` instalou **CPython 3.12.16**; `sam2-lab/.venv` foi criado e ativado fora do repositório, com `which python` confirmado. `free -h`: 14 GiB RAM total, 4,5 GiB disponíveis; **swap de 4 GiB praticamente toda utilizada (17 MiB livres)**. `df -h`: 31 GiB livres na partição raiz (79% de uso). **Subetapa de criação do ambiente concluída; E2.2 geral aberta.** Antes de instalar PyTorch/SAM 2, revisar processos de maior consumo e swap por comandos somente de leitura. Evidência e roteiro em `docs/SAM2_PREPARACAO_E2.md`.  
 **Novo diagnóstico local (04/11/2026):** RAM disponível caiu para **2,5 GiB**, swap utilizada **3,9/4 GiB**, disco **31 GiB livres**. Processo `Isolated Web Co` de maior consumo apresenta **4.761.624 KiB RSS (~4,54 GiB)**; provável conteúdo isolado do Firefox, sem identificação da aba/causa. Antes de instalar IA, salvar trabalho, reduzir abas do navegador voluntariamente e repetir o diagnóstico; **não** usar `kill`/`swapoff` automaticamente. Detalhes e comandos em [`docs/SAM2_DIAGNOSTICO_MEMORIA_E2.md`](docs/SAM2_DIAGNOSTICO_MEMORIA_E2.md). **E2.2 continua aberta.**  
+**Segunda coleta de recursos (04/11/2026):** RAM disponível subiu para **3,2 GiB** (antes 2,5), swap em uso caiu para **2,6 GiB** (antes 3,9). No `vmstat 1 5`, amostras intermediárias mostraram `si=732` e `si=20` KiB/s, `so=0` e amostras finais `si=so=0` — sem indicação de troca contínua intensa nesse intervalo. Processo `Isolated Web Co` ainda com **4.751.372 KiB RSS (~4,53 GiB)**. Prioridade: salvar sessão e encerrar Firefox normalmente, quando possível, depois repetir RAM/processos; não forçar encerramento ou swapoff. Ver `docs/SAM2_DIAGNOSTICO_MEMORIA_E2.md`. **Sem PyTorch/SAM 2 instalado e E2.2 aberta.**  
 **Próxima ação concreta: E2.2** — criar laboratório **isolado fora do ControlVision**, utilizando `uv` para instalar **Python 3.12 por usuário** e criar `~/Documentos/ambiente_dass/sam2-lab/.venv` (sem modificar o Python 3.14). Só então avaliar bibliotecas CPU-only e checkpoint `tiny`; verificar memória/disco e medir recursos antes da inferência. **Não instalar PyTorch no backend principal e não declarar E2.2 concluída.** Guia: `docs/SAM2_PREPARACAO_E2.md`.
 
 | Etapa | Tema | Estado | Condição para avançar |
@@ -262,9 +263,10 @@ Adicionar uma linha por rodada relevante. Se não houver dados, escrever **"não
 | 03/11/2026 | Inventário detalhado do hardware (RAM/swap/Ubuntu/GPU não confirmada); instruções verificadas para criar Python 3.12 isolado com `uv` sem alterar Python do sistema | **E2.2 segue em preparação; sem inferência real** |
 | 03/11/2026 | E2.2: uv 0.13.7 e Python 3.12.16 confirmados; laboratório isolado criado; 4,5 GiB RAM disponível e swap de 4 GiB praticamente saturada, 31 GiB em disco | **Ambiente criado; aguarda diagnóstico de memória antes de instalar IA; E2.2 aberta** |
 | 04/11/2026 | E2.2: RAM disponível 2,5 GiB, swap usada 3,9/4 GiB, processo isolado de conteúdo web ~4,54 GiB RSS; diagnóstico e orientação segura em `docs/SAM2_DIAGNOSTICO_MEMORIA_E2.md` | **Aguardar nova avaliação de recursos; sem instalação de IA** |
+| 04/11/2026 | E2.2: segunda coleta — RAM disponível 3,2 GiB, swap utilizada 2,6 GiB, sem paginação contínua nas amostras finais de `vmstat`; processo web principal ~4,53 GiB RSS persiste | **Melhora parcial; solicitar encerramento normal do navegador e reavaliar antes de instalar IA** |
 
 ---
 
 **Referências dentro do repositório:** `README.md` (estado e execução do protótipo), `docs/VALIDACAO.md` (matriz de validação), `backend/app/vision.py` (baseline OpenCV), `backend/app/matching.py` e `backend/app/family_matching.py` (correspondência CAD), `backend/app/texture_anomalies.py` (análise óptica exploratória), `docs/SAM2_PREPARACAO_E2.md` e `backend/app/sam2_preflight.py` (verificação SAM 2.1).
 
-**Próximo item obrigatório: E2.2 — reavaliar `free -h`, principais processos e atividade de swap após fechamento voluntário de abas desnecessárias do Firefox; só depois decidir pela instalação de torch CPU-only e SAM 2.1 tiny, mantendo o backend principal inalterado.**
+**Próximo item obrigatório: E2.2 — encerrar normalmente o Firefox depois de salvar a sessão, quando conveniente, e repetir `free -h`/processos; avaliar memória disponível antes da instalação experimental de torch CPU-only e SAM 2.1 tiny, mantendo o backend principal inalterado.**
