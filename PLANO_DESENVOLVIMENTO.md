@@ -16,7 +16,7 @@ O produto será **web, acessado em vários computadores da produção**, com cab
 
 **Próximo marco prioritário:** **P0 — estudo óptico + referência humana privada**, usando peça física e CAD correspondente para verificar se os menores vazadores podem ser vistos e separados da trama. Seleção da câmera comercial permanece **posterior**; não bloquear P0 por compra de equipamento.
 
-**Testes P0 confirmados (04/11/2026):** após instalar `pytest==9.2.0` exclusivamente em `backend/.venv`, operador executou `tests/test_p0_manifest.py`: **7 passed in 0.01s**. O bloqueio inicial `No module named pytest` foi resolvido. Isso valida apenas o manifesto sintético, **não dados reais ou vazadores físicos**. Evidência em [docs/P0_REGISTRO_PRIVADO.md](docs/P0_REGISTRO_PRIVADO.md).
+**Testes backend confirmados (04/11/2026):** operador instalou `pytest==9.2.0` em `backend/.venv` e executou **a suíte completa:** `140 passed in 2.93s`. Os sete testes do manifesto P0 já haviam passado isoladamente (`7 passed in 0.01s`). Regressão automatizada do backend aprovada nesta execução local, **sem validar fotografias, vazadores reais, IA ou uso industrial**. Evidências em [docs/P0_REGISTRO_PRIVADO.md](docs/P0_REGISTRO_PRIVADO.md).
 
 ## Roadmap e critérios
 
@@ -62,7 +62,7 @@ As etapas podem ter **experimentos paralelos**; P0 foi priorizado antes de inves
 
 ## Registro condensado de decisões
 
-- 04/11: validador offline e manifesto sintético P0.1 adicionados; `pytest 9.2.0` instalado no backend local e **7 testes sintéticos aprovados**. Ainda sem inspeção real.
+- 04/11: validador offline e manifesto sintético P0.1 adicionados; `pytest 9.2.0` instalado no backend local, **7 testes P0 e 140 testes da suíte backend aprovados**. Ainda sem inspeção real.
 
 - 19–23/10: protótipo de CAD/visão, comparação visual e laboratório de máscaras começaram; etapas 1.1–1.3 concluídas em código.
 - 03/11: UI de comparação, testes de contratos e protocolo de métricas E1.4–E1.6; Python 3.12 isolado planejado e criado.

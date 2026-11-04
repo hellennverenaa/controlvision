@@ -72,3 +72,24 @@ pytest 9.2.0
 ```
 
 **Conclusão:** os sete testes sintéticos do validador de manifesto P0 foram aprovados no computador do operador. Esta evidência não inclui suíte completa, análise de fotografia real, verificação física de furos, integração com IA ou homologação industrial. Os arquivos privados do ensaio-001 ainda precisam ser preparados e revisados.
+
+
+## Suíte completa do backend — execução local em 04/11/2026
+
+O operador executou no ambiente virtual do backend:
+
+```bash
+cd ~/Documentos/ambiente_dass/controlvision/backend
+.venv/bin/python -m pytest -q
+```
+
+Resultado fornecido:
+
+```text
+........................................................ [ 40%]
+........................................................ [ 80%]
+............................                             [100%]
+140 passed in 2.93s
+```
+
+**Conclusão:** regressão automatizada completa do backend passou nesta execução local. Os **7 testes de estrutura do manifesto P0** integram essa suíte. Isso **não** demonstra reconhecimento de vazadores em fotos reais, revisão física, treinamento de IA, calibração ou homologação. Também não substitui testes de frontend e E2E. Próximo passo permanece a preparação de um ensaio privado com uma lingueta física, seu DXF correto e fotos originais.
